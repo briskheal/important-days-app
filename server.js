@@ -150,7 +150,8 @@ const transporter = nodemailer.createTransport({
     tls: {
         rejectUnauthorized: false
     },
-    connectionTimeout: 20000, // 20 seconds
+    family: 4, // Force IPv4 to avoid common cloud networking issues with IPv6
+    connectionTimeout: 20000,
     greetingTimeout: 20000,
     socketTimeout: 20000
 });
