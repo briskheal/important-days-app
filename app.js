@@ -132,7 +132,10 @@ function updateWelcomeBanner() {
     const adminBtn = document.getElementById('fixed-admin-btn');
     if (adminBtn) {
         const normPhone = (activeUserObj.phone || '').replace(/\D/g, '');
-        adminBtn.style.display = (normPhone === '8878923337' || normPhone === '918878923337') ? 'inline-flex' : 'none';
+        // Robust check: matches both 10-digit and 12-digit versions of the admin phone
+        const isAdmin = (normPhone === '8878923337' || normPhone === '918878923337');
+        adminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+        if (isAdmin) console.log("[ADMIN] Admin button visibility: active");
     }
 }
 
@@ -231,20 +234,33 @@ async function checkPendingApprovals() {
 
     try {
         const res = await fetch(getApiUrl('/api/admin/ledger'));
-        if (!res.ok) return;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const ledger = await res.json();
-        const hasPending = (ledger || []).some(p => p.status === 'pending');
+        
+        const pendingItems = (ledger || []).filter(p => p.status === 'pending');
+        const pendingCount = pendingItems.length;
         
         const adminBtn = document.getElementById('fixed-admin-btn');
         if (adminBtn) {
-            if (hasPending) {
+            if (pendingCount > 0) {
                 adminBtn.classList.add('blink-admin');
+                // Add or update badge
+                let badge = adminBtn.querySelector('.admin-badge');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'admin-badge';
+                    adminBtn.appendChild(badge);
+                }
+                badge.textContent = pendingCount;
+                console.log(`[ADMIN] ${pendingCount} approvals pending. Blinking active.`);
             } else {
                 adminBtn.classList.remove('blink-admin');
+                const badge = adminBtn.querySelector('.admin-badge');
+                if (badge) badge.remove();
             }
         }
     } catch (e) {
-        console.warn("[ADMIN] Failed to check pending approvals", e);
+        console.warn("[ADMIN] Failed to check pending approvals:", e.message);
     }
 }
 

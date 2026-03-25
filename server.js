@@ -333,53 +333,57 @@ app.post('/api/notify-payment', async (req, res) => {
         
         console.log(`[INFO] Processing Payment: User=${userName}, Mobile=${mobile}, UTR=${txnId}, Amount=${amount}, Type=${type}`);
 
-        // Email to Admin
-        await sendEmail({
-            to: process.env.EMAIL_USER,
-            subject: `🔔 New Subscription Payment: ${userName}`,
-            text: `New payment received.\n\nUser: ${userName}\nMobile: ${mobile}\nPlan: ${type}\nAmount: ${amount}\nUTR: ${txnId}`,
-            html: `
-                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                    <h2 style="color: #7c6fff;">New Subscription Payment</h2>
-                    <p><strong>User:</strong> ${userName}</p>
-                    <p><strong>Mobile:</strong> ${mobile}</p>
-                    <p><strong>Plan:</strong> ${type.toUpperCase()}</p>
-                    <p><strong>Amount:</strong> ₹${amount}</p>
-                    <p><strong>UTR:</strong> ${txnId}</p>
-                    <hr>
-                    <p style="font-size: 0.8rem; color: #666;">Please verify this in the Admin Dashboard.</p>
-                </div>
-            `
-        });
-
-        // Save to MongoDB
+        // 1. Save to MongoDB FIRST (Crucial for data integrity)
         const newPayment = new Payment({
             userName, mobile: normPhone(mobile), email: customerEmail, type, amount, txnId,
             status: 'pending', paidAt: new Date()
         });
         await newPayment.save();
+        console.log(`[OK] Payment record created in DB for UTR: ${txnId}`);
 
-        // Email to Customer
-        if (customerEmail && customerEmail.includes('@')) {
+        // 2. Email Notifications (Async, catch errors so they don't block response)
+        try {
+            // Email to Admin
             await sendEmail({
-                to: customerEmail,
-                subject: `Payment Received - Verification in Progress`,
-                text: `Dear ${userName},\n\nWe received your payment of Rs. ${amount}. Your UTR is ${txnId}.\nVerification is in progress and usually takes less than 24 hours.`,
+                to: process.env.EMAIL_USER,
+                subject: `🔔 New Subscription Payment: ${userName}`,
+                text: `New payment received.\n\nUser: ${userName}\nMobile: ${mobile}\nPlan: ${type}\nAmount: ${amount}\nUTR: ${txnId}`,
                 html: `
-                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #7c6fff; border-radius: 10px; max-width: 500px;">
-                        <h2 style="color: #7c6fff;">Payment Received</h2>
-                        <p>Dear <strong>${userName}</strong>,</p>
-                        <p>We've received your payment of <strong>₹${amount}</strong> for the <strong>${type}</strong> subscription.</p>
+                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #7c6fff; border-radius: 10px;">
+                        <h2 style="color: #7c6fff;">New Subscription Payment</h2>
+                        <p><strong>User:</strong> ${userName}</p>
+                        <p><strong>Mobile:</strong> ${mobile}</p>
+                        <p><strong>Plan:</strong> ${type.toUpperCase()}</p>
+                        <p><strong>Amount:</strong> ₹${amount}</p>
                         <p><strong>UTR:</strong> ${txnId}</p>
-                        <p>Our team is currently verifying the transaction. Access will be granted within 24 hours.</p>
                         <hr>
-                        <p style="font-size: 0.8rem; color: #666;">Thank you for your support!</p>
+                        <p style="font-size: 0.8rem; color: #666;">Please verify this in the Admin Dashboard.</p>
                     </div>
                 `
             });
-        } else {
-            console.log(`[INFO] No customer email provided, skipping receipt.`);
-        }
+        } catch (e) { console.error("[ERR] Admin notification email failed:", e.message); }
+
+        try {
+            // Email to Customer
+            if (customerEmail && customerEmail.includes('@')) {
+                await sendEmail({
+                    to: customerEmail,
+                    subject: `Payment Received - Verification in Progress`,
+                    text: `Dear ${userName},\n\nWe received your payment of Rs. ${amount}. Your UTR is ${txnId}.\nVerification is in progress and usually takes less than 24 hours.`,
+                    html: `
+                        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #7c6fff; border-radius: 10px; max-width: 500px;">
+                            <h2 style="color: #7c6fff;">Payment Received</h2>
+                            <p>Dear <strong>${userName}</strong>,</p>
+                            <p>We've received your payment of <strong>₹${amount}</strong> for the <strong>${type}</strong> subscription.</p>
+                            <p><strong>UTR:</strong> ${txnId}</p>
+                            <p>Our team is currently verifying the transaction. Access will be granted within 24 hours.</p>
+                            <hr>
+                            <p style="font-size: 0.8rem; color: #666;">Thank you for your support!</p>
+                        </div>
+                    `
+                });
+            }
+        } catch (e) { console.error("[ERR] Customer receipt email failed:", e.message); }
 
         console.log(`[OK] Payment notification fully processed for ${txnId}`);
         res.json({ status: 'success', message: 'Payment recorded and notifications triggered.' });
