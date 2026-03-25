@@ -138,43 +138,19 @@ app.get('/login', (req, res) => {
 
 app.use(express.static(__dirname));
 
-// ── EMAIL CONFIGURATION (Mailjet API via Axios) ──────────────────
+// ── EMAIL CONFIGURATION (Google Apps Script Bridge via Axios) ────
 async function sendEmail({ to, subject, text, html }) {
-    if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_SECRET_KEY) {
-        console.error("[ERR] Mailjet credentials missing in environment!");
+    if (!process.env.EMAIL_BRIDGE_URL || process.env.EMAIL_BRIDGE_URL.includes('your-google-script')) {
+        console.warn("[WARN] Email Bridge URL missing or default, skipping email.");
         return;
     }
-
-    const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_SECRET_KEY}`).toString('base64');
     try {
-        const response = await axios.post('https://api.mailjet.com/v3.1/send', {
-            Messages: [
-                {
-                    From: {
-                        Email: process.env.EMAIL_USER,
-                        Name: "Important Days"
-                    },
-                    To: [
-                        {
-                            Email: to
-                        }
-                    ],
-                    Subject: subject,
-                    TextPart: text,
-                    HTMLPart: html
-                }
-            ]
-        }, {
-            headers: {
-                'Authorization': `Basic ${auth}`,
-                'Content-Type': 'application/json'
-            }
+        const response = await axios.post(process.env.EMAIL_BRIDGE_URL, {
+            to, subject, text, html
         });
-        console.log(`[OK] Email (Mailjet API) SENT to ${to}`);
-        return response.data;
+        console.log(`[OK] Email (Bridge API) SENT to ${to}:`, response.data.status);
     } catch (error) {
-        const errDetail = error.response ? JSON.stringify(error.response.data) : error.message;
-        console.error(`[ERR] Email (Mailjet API) FAILED for ${to}:`, errDetail);
+        console.error(`[ERR] Email (Bridge API) FAILED for ${to}:`, error.message);
     }
 }
 
