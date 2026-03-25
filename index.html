@@ -395,9 +395,17 @@
             </div>
           </div><!-- end social-links-section -->
           
-          <div class="input-group" style="margin-top:12px; display:flex; align-items:center; gap:10px; padding:10px; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
-            <input type="checkbox" id="prof-show-teaser" style="width:18px; height:18px; cursor:pointer;" checked />
-            <label for="prof-show-teaser" style="font-size:0.85rem; color:var(--text-primary); cursor:pointer; font-weight:600;">✨ Show Welcome Guide on Landing Page</label>
+          </div>
+          
+          <!-- Payment History Section -->
+          <div class="profile-section" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.08); padding-top:15px;">
+            <label class="social-section-label" style="display:flex; align-items:center; gap:8px;">
+                💳 Payment History & Receipts
+            </label>
+            <div id="prof-payment-list" style="max-height:120px; overflow-y:auto; margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+                <!-- Filled by JS -->
+                <p style="font-size:0.75rem; color:var(--text-secondary); opacity:0.6; text-align:center;">No payment history found.</p>
+            </div>
           </div>
 
           <!-- Action Buttons -->
@@ -439,6 +447,42 @@
 
   <!-- ── Success Toast Container ── -->
   <div id="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;"></div>
+
+  <!-- ── Hidden Printable Receipt ── -->
+  <div id="receipt-print-area" style="display:none;">
+    <div class="receipt-card">
+      <div class="receipt-header">
+        <div class="receipt-logo">ICDAYS APP</div>
+        <div class="receipt-title">MONEY RECEIPT</div>
+      </div>
+      <div class="receipt-info">
+        <p><strong>Receipt No:</strong> <span id="r-no"></span></p>
+        <p><strong>Date:</strong> <span id="r-date"></span></p>
+      </div>
+      <hr>
+      <div class="receipt-details">
+        <p><strong>Received From:</strong> <span id="r-name"></span></p>
+        <p><strong>Phone:</strong> <span id="r-phone"></span></p>
+        <p><strong>Description:</strong> <span id="r-desc"></span></p>
+        <div class="receipt-amount-box">
+          Amount Paid: ₹<span id="r-amount"></span>
+        </div>
+      </div>
+      <div class="receipt-footer">
+        <div class="receipt-stamp-box">
+          <div class="receipt-stamp">PAID</div>
+          <div class="receipt-stamp-text">ICDAYS APP</div>
+        </div>
+        <div class="receipt-sig">
+          <div class="sig-cursive">ICDAYS APP</div>
+          <div class="sig-label">Authorized Signatory</div>
+        </div>
+      </div>
+      <div class="receipt-disclaimer">
+        * This is a computer-generated digital receipt and does not require a physical signature.
+      </div>
+    </div>
+  </div>
 
     <!-- ── Scripts ── -->
     <script src="data.js"></script>

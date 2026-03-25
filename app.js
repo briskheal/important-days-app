@@ -1658,6 +1658,9 @@ window.openProfileModal = function() {
     if (document.getElementById('prof-ig-link')) document.getElementById('prof-ig-link').value = user.igLink || '';
     if (document.getElementById('prof-ig-auto')) document.getElementById('prof-ig-auto').checked = user.igAuto === true;
 
+    // Load Payment History
+    updatePaymentHistoryUI();
+
     if (document.getElementById('prof-show-teaser')) {
         document.getElementById('prof-show-teaser').checked = user.showTeaser !== false;
     }
@@ -1774,3 +1777,57 @@ document.getElementById('prof-reset-pwd-btn')?.addEventListener('click', () => {
     localStorage.removeItem('importantDays_user');
     window.location.replace('login.html');
 });
+
+// ── Payment History & Receipt Logic ────────────────
+window.updatePaymentHistoryUI = function() {
+    const user = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
+    const container = document.getElementById('prof-payment-list');
+    if (!container || !user.phone) return;
+
+    // We check local ledger first, then can potentially fetch from server if needed
+    const ledger = JSON.parse(localStorage.getItem('importantDays_paymentLedger') || '[]');
+    const userPayments = ledger.filter(p => normPhone(p.mobile) === normPhone(user.phone));
+
+    if (userPayments.length === 0) {
+        container.innerHTML = `<p style="font-size:0.75rem; color:var(--text-secondary); opacity:0.6; text-align:center; padding:10px;">No payment history found.</p>`;
+        return;
+    }
+
+    container.innerHTML = userPayments.reverse().map(p => {
+        const dateStr = new Date(p.paidAt || Date.now()).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+        const statusClass = `badge-${p.status || 'pending'}`;
+        const canPrint = p.status === 'approved' || p.status === 'active';
+        
+        return `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.03); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+                <div>
+                    <div style="font-size:0.8rem; font-weight:600; color:#fff;">${(p.type||'plan').toUpperCase()} - ₹${p.amount}</div>
+                    <div style="font-size:0.65rem; color:var(--text-secondary);">${dateStr} • UTR: ${p.txnId.substring(0,8)}...</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="welcome-badge ${statusClass}" style="margin:0; padding:2px 8px; font-size:0.6rem;">${(p.status||'pending').toUpperCase()}</span>
+                    ${canPrint ? `<button onclick="viewReceipt('${p.txnId}')" style="background:none; border:none; color:var(--accent-main); cursor:pointer; font-size:0.7rem; font-weight:700; text-decoration:underline;">Receipt 📄</button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+window.viewReceipt = function(txnId) {
+    const ledger = JSON.parse(localStorage.getItem('importantDays_paymentLedger') || '[]');
+    const p = ledger.find(pay => pay.txnId === txnId);
+    if (!p) return;
+
+    const user = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
+    
+    // Populate receipt template
+    document.getElementById('r-no').textContent = `REC-${p.txnId.substring(0,8).toUpperCase()}`;
+    document.getElementById('r-date').textContent = new Date(p.paidAt || Date.now()).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('r-name').textContent = user.name || 'Valued Subscriber';
+    document.getElementById('r-phone').textContent = user.phone;
+    document.getElementById('r-desc').textContent = `${(p.type||'subscription').toUpperCase()} Subscription - Important Days App`;
+    document.getElementById('r-amount').textContent = p.amount;
+
+    // Trigger Print
+    window.print();
+};
