@@ -4,6 +4,14 @@
 
 'use strict';
 
+// ── API URL Helper for Local/File Protocol Support ──────────────────
+function getApiUrl(path) {
+    if (window.location.protocol === 'file:') {
+        return `http://localhost:8083${path}`;
+    }
+    return path;
+}
+
 // ── Auth Check ─────────────────────────────
 if (localStorage.getItem('importantDays_session_active') !== 'true') {
     window.location.replace('landing.html');
@@ -146,7 +154,7 @@ async function checkSubscriptionStatus() {
     }
 
     try {
-        const res = await fetch(`/api/subscription-status?mobile=${encodeURIComponent(user.phone)}`);
+        const res = await fetch(getApiUrl(`/api/subscription-status?mobile=${encodeURIComponent(user.phone)}`));
         const sub = await res.json();
         const now = new Date();
         const subKey = `importantDays_subscription_${user.phone}`;
@@ -222,7 +230,7 @@ async function checkPendingApprovals() {
     if (!isAdmin) return;
 
     try {
-        const res = await fetch('/api/admin/ledger');
+        const res = await fetch(getApiUrl('/api/admin/ledger'));
         if (!res.ok) return;
         const ledger = await res.json();
         const hasPending = (ledger || []).some(p => p.status === 'pending');
@@ -661,7 +669,7 @@ async function fetchFreeSnippet(date, name, elementId) {
     const el = document.getElementById(elementId);
     if (!el) return;
     try {
-        const res = await fetch(`/api/content?date=${date}&name=${encodeURIComponent(name)}`);
+        const res = await fetch(getApiUrl(`/api/content?date=${date}&name=${encodeURIComponent(name)}`));
         if (res.ok) {
             const data = await res.json();
             // Use freeSnippet if available, or first variant as fallback
@@ -1306,14 +1314,8 @@ async function openContentModal(mmdd, eventName, category) {
         try {
             const apiPath = `/api/content?date=${mmdd}&name=${encodeURIComponent(ev.name)}&category=${encodeURIComponent(category || ev.category)}`;
             
-            // Handle file:// protocol by trying absolute localhost URL for development
-            let fetchUrl = apiPath;
-            if (window.location.protocol === 'file:') {
-                console.info("Running locally via file protocol, using localhost:8083 for API");
-                fetchUrl = `http://localhost:8083${apiPath}`;
-            }
-
-            const response = await fetch(fetchUrl);
+            // No longer need the manual protocol check here as getApiUrl handles it
+            const response = await fetch(getApiUrl(apiPath));
             if (response.ok) {
                 const data = await response.json();
                 if (data.status === 'success' && data.variants && data.variants.length > 0) {
@@ -1466,7 +1468,7 @@ window.confirmSubscription = function () {
     localStorage.setItem('importantDays_paymentLedger', JSON.stringify(ledger));
 
     // Notify Server to send both Admin and Customer emails via SMTP
-    fetch('/api/notify-payment', {
+    fetch(getApiUrl('/api/notify-payment'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(subData)
@@ -1641,7 +1643,7 @@ document.getElementById('prof-save-btn')?.addEventListener('click', () => {
     }
 
     // Sync to Server
-    fetch('/api/register', {
+    fetch(getApiUrl('/api/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(user)
@@ -1669,7 +1671,7 @@ document.getElementById('prof-reset-pwd-btn')?.addEventListener('click', () => {
         localStorage.setItem('importantDays_allUsers', JSON.stringify(allUsers));
     }
     // Sync to server
-    fetch('/api/reset-password', {
+    fetch(getApiUrl('/api/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: user.phone, newPassword: newPwd })

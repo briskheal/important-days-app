@@ -476,6 +476,14 @@
     </div>
 
     <script>
+        // ── API URL Helper for Local/File Protocol Support ──────────────────
+        function getApiUrl(path) {
+            if (window.location.protocol === 'file:') {
+                return `http://localhost:8083${path}`;
+            }
+            return path;
+        }
+
         let currentTab = 'pending';
 
         function goStep(n) {
@@ -495,7 +503,7 @@
             const pwd = document.getElementById('adminPwd').value.trim();
             
             try {
-                const res = await fetch('/api/admin/login', {
+                const res = await fetch(getApiUrl('/api/admin/login'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, pwd })
@@ -552,8 +560,8 @@
         async function refreshData() {
             try {
                 const [lRes, uRes] = await Promise.all([
-                    fetch('/api/admin/ledger'),
-                    fetch('/api/admin/users')
+                    fetch(getApiUrl('/api/admin/ledger')),
+                    fetch(getApiUrl('/api/admin/users'))
                 ]);
                 cachedLedger = await lRes.json();
                 cachedUsers = await uRes.json();
@@ -579,7 +587,7 @@
 
         async function checkDbStatus() {
             try {
-                const res = await fetch('/health');
+                const res = await fetch(getApiUrl('/health'));
                 const data = await res.json();
                 const dot = document.getElementById('db-status-dot');
                 const text = document.getElementById('db-status-text');
@@ -684,7 +692,7 @@
             const expiryStr = newExpiry.toISOString();
 
             try {
-                const res = await fetch('/api/admin/update-status', {
+                const res = await fetch(getApiUrl('/api/admin/update-status'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -718,7 +726,7 @@
             
             if (!confirm(`Reject this request? Reason: ${reason}`)) return;
             try {
-                const res = await fetch('/api/admin/update-status', {
+                const res = await fetch(getApiUrl('/api/admin/update-status'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -746,7 +754,7 @@
             const u = allUsers.find(x => norm(x.phone) === target);
             
             if (u && u.email) {
-                fetch('/api/notify-status', {
+                fetch(getApiUrl('/api/notify-status'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -824,7 +832,7 @@
             const pwd = document.getElementById('adminPwd').value.trim();
 
             try {
-                const res = await fetch('/api/admin/reset-db', { 
+                const res = await fetch(getApiUrl('/api/admin/reset-db'), { 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, pwd })

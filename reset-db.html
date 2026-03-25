@@ -107,14 +107,22 @@
         <h1>🧹 Reset Database</h1>
         <p>This action will permanently delete all users and payment records from the server and clear your local session. This cannot be undone.</p>
         
-        <button id="reset-btn" class="btn btn-reset" onclick="handleReset()">Erase All Data</button>
+        <button id="reset-btn" class="btn btn-reset" onclick="performReset()">Erase All Data</button>
         <button id="cancel-btn" class="btn btn-cancel" onclick="window.location.href='landing.html'">Cancel</button>
 
         <div id="status"></div>
     </div>
 
     <script>
-        async function handleReset() {
+        // ── API URL Helper for Local/File Protocol Support ──────────────────
+        function getApiUrl(path) {
+            if (window.location.protocol === 'file:') {
+                return `http://localhost:8083${path}`;
+            }
+            return path;
+        }
+
+        async function performReset() {
             if (!confirm("Are you absolutely sure? This will delete EVERYTHING.")) return;
             
             const btn = document.getElementById('reset-btn');
@@ -125,7 +133,7 @@
             status.innerHTML = '<span class="spinning">⏳</span> Connecting to server...';
 
             try {
-                const res = await fetch('/api/admin/reset-db', { method: 'POST' });
+                const res = await fetch(getApiUrl('/api/admin/reset-db'), { method: 'POST' });
                 
                 if (res.ok) {
                     status.style.color = "#10b981";

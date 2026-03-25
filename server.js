@@ -16,7 +16,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 let dbConnected = false;
 if (MONGODB_URI && !MONGODB_URI.includes('your_mongodb_atlas')) {
     mongoose.connect(MONGODB_URI, {
-        serverSelectionTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 30000, // Increased to 30s for more robust cloud handshakes
         socketTimeoutMS: 45000,
     })
         .then(() => {
@@ -25,7 +25,10 @@ if (MONGODB_URI && !MONGODB_URI.includes('your_mongodb_atlas')) {
         })
         .catch(err => {
             console.error('[ERR] MongoDB Connection Error:', err.message);
-            console.error('[HINT] Check Render Env Vars and MongoDB IP Whitelist.');
+            if (err.message.includes('whitelsited') || err.message.includes('Could not connect to any servers')) {
+                console.error('[HINT] This usually means Render\'s IP is NOT whitelisted in MongoDB Atlas.');
+            }
+            console.error('[HINT] Check MONGODB_URI in Render Env Vars and verify Network Access (0.0.0.0/0).');
             dbConnected = false;
         });
 } else {

@@ -419,6 +419,14 @@
     </div>
 
     <script>
+        // ── API URL Helper for Local/File Protocol Support ──────────────────
+        function getApiUrl(path) {
+            if (window.location.protocol === 'file:') {
+                return `http://localhost:8083${path}`;
+            }
+            return path;
+        }
+
         // Set initial step
         function showStep(stepId) {
             // Remove active class from all steps
@@ -532,7 +540,7 @@
 
             // Server-side check fallback
             try {
-                const res = await fetch('/api/check-phone', {
+                const res = await fetch(getApiUrl('/api/check-phone'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phone: fullPhoneRaw })
@@ -595,7 +603,7 @@
 
             // Sync to Server
             try {
-                await fetch('/api/register', {
+                await fetch(getApiUrl('/api/register'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newUser)
@@ -645,7 +653,7 @@
 
             // 2. Server Fallback (Vital for recovery or multi-device)
             try {
-                const res = await fetch('/api/login', {
+                const res = await fetch(getApiUrl('/api/login'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ loginId: idInput, password: pwdInput })
@@ -678,7 +686,7 @@
             const fullPhone = ccode + ' ' + phone; 
 
             try {
-                const res = await fetch('/api/recover-account', {
+                const res = await fetch(getApiUrl('/api/recover-account'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phone: fullPhone })
@@ -706,7 +714,7 @@
             if (!newPwd) return alert("Enter new password");
 
             try {
-                const res = await fetch('/api/reset-password', {
+                const res = await fetch(getApiUrl('/api/reset-password'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phone: window._resetPhone, newPassword: newPwd })

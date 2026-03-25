@@ -207,6 +207,14 @@
     </div>
 
     <script>
+        // ── API URL Helper for Local/File Protocol Support ──────────────────
+        function getApiUrl(path) {
+            if (window.location.protocol === 'file:') {
+                return `http://localhost:8083${path}`;
+            }
+            return path;
+        }
+
         // Personalized Welcome Logic
         window.addEventListener('DOMContentLoaded', () => {
             const userStr = localStorage.getItem('importantDays_user');
@@ -228,7 +236,7 @@
 
                         // Sync Subscription Status - NEW
                         if (user.phone) {
-                            fetch(`/api/subscription-status?mobile=${encodeURIComponent(user.phone)}`)
+                            fetch(getApiUrl(`/api/subscription-status?mobile=${encodeURIComponent(user.phone)}`))
                                 .then(res => res.json())
                                 .then(sub => {
                                     if (!sub || sub.status === 'none') return;
