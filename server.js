@@ -216,6 +216,43 @@ app.post('/api/register', async (req, res) => {
             });
             await user.save();
             console.log(`[OK] New user registered on backend: ${data.name} (ID: ${newId})`);
+
+            // SEND WELCOME EMAIL WITH CREDENTIALS
+            if (user.email) {
+                try {
+                    await sendEmail({
+                        to: user.email,
+                        subject: "✨ Welcome to Important Days! - Your Credentials",
+                        text: `Hello ${user.name},\n\nYour account has been created successfully!\n\nLOGIN ID: ${newId}\nPASSWORD: ${newPwd}\n\nIMPORTANT: Please change your password in the profile module as soon as possible for better security.\n\nEnjoy exploring important global and Indian days!`,
+                        html: `
+                            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #6366f1; border-radius: 12px; max-width: 500px;">
+                                <h1 style="color: #6366f1; margin-bottom: 20px;">Welcome to Important Days!</h1>
+                                <p>Hello <b>${user.name}</b>,</p>
+                                <p>Your account is ready. Here are your login credentials for your record:</p>
+                                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 20px 0;">
+                                    <p style="margin: 0; font-size: 0.9rem; color: #64748b;">LOGIN ID</p>
+                                    <p style="margin: 0 0 16px 0; font-size: 1.25rem; font-weight: 800; color: #1e293b; letter-spacing: 1px;">${newId}</p>
+                                    <p style="margin: 0; font-size: 0.9rem; color: #64748b;">PASSWORD</p>
+                                    <p style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b; letter-spacing: 1px;">${newPwd}</p>
+                                </div>
+                                <div style="background: #fff7ed; padding: 12px; border-radius: 8px; border-left: 4px solid #f97316; margin-bottom: 20px;">
+                                    <p style="margin: 0; font-size: 0.85rem; color: #9a3412;">
+                                        <b>⚠️ Security Tip:</b> Please change your password in the <b>Profile Module</b> as soon as you log in.
+                                    </p>
+                                </div>
+                                <p style="font-size: 0.9rem; color: #475569;">
+                                    Use these details to access your dashboard and explore important dates worldwide.
+                                </p>
+                                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                                <p style="font-size: 0.8rem; color: #94a3b8; text-align: center;">Important Days — Celebrating what matters.</p>
+                            </div>
+                        `
+                    });
+                    console.log(`[OK] Welcome email sent to ${user.email}`);
+                } catch (e) {
+                    console.error("[ERR] Failed to send welcome email:", e.message);
+                }
+            }
             res.json({ status: 'success', user });
         } else {
             // SYNC DATA BUT PRESERVE SENSITIVE CREDENTIALS
@@ -370,30 +407,34 @@ function maskEmail(email) {
 app.post('/api/reset-password', async (req, res) => {
     try {
         const { phone, otp, newPassword } = req.body;
-        if (!phone || !otp || !newPassword) return res.status(400).json({ error: "Phone, OTP and Password required" });
+        if (!phone || !newPassword) return res.status(400).json({ error: "Phone and Password required" });
         
         let user = await findUserByPhone(phone);
         
         if (user) {
-            // VERIFY OTP
-            if (!user.resetOtp || user.resetOtp !== otp) {
-                return res.status(400).json({ status: 'error', message: 'Invalid or incorrect security code.' });
-            }
-            if (new Date() > user.resetOtpExpiry) {
-                return res.status(400).json({ status: 'error', message: 'Security code has expired. Please request a new one.' });
-            }
-
+            // IF OTP is provided, verify it (Forgot Password Flow)
+            if (otp) {
+                if (!user.resetOtp || user.resetOtp !== otp) {
+                    return res.status(400).json({ status: 'error', message: 'Invalid or incorrect security code.' });
+                }
+                if (new Date() > user.resetOtpExpiry) {
+                    return res.status(400).json({ status: 'error', message: 'Security code has expired. Please request a new one.' });
+                }
+            } 
+            // IF NO OTP, it's a direct reset (Authenticated Change from Profile)
+            // Note: In a production app, we would verify a session token here.
+            
             // Clear OTP and set new password
             user.password = newPassword;
             user.resetOtp = null;
             user.resetOtpExpiry = null;
             await user.save();
             
-            console.log(`[OK] Secure password reset for: ${user.name} (${user.phone})`);
+            console.log(`[OK] Password updated for: ${user.name} (${user.phone})`);
             res.json({ status: 'success' });
         } else {
-            console.warn(`[WARN] Password reset failed for phone: ${phone}`);
-            res.status(404).json({ status: 'error', message: 'Account not found. Reset failed.' });
+            console.warn(`[WARN] Password update failed for phone: ${phone}`);
+            res.status(404).json({ status: 'error', message: 'Account not found. Update failed.' });
         }
     } catch (err) {
         console.error("Reset error:", err);

@@ -276,8 +276,11 @@
             </div>
 
             <div class="auth-header">
-                <h1 class="auth-title" id="auth-title">Welcome Back</h1>
-                <p class="auth-subtitle" id="auth-subtitle">Enter your details to access the calendar.</p>
+                <h1 class="auth-title" id="auth-title">Welcome</h1>
+                <p class="auth-subtitle" id="auth-subtitle">Loading...</p>
+                <div style="margin-top: 10px;">
+                    <a href="landing.html" style="color: var(--text-secondary); text-decoration: none; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 2px;">&larr; Back to Welcome Page</a>
+                </div>
             </div>
 
             <!-- STEP 1: Registration Form -->
@@ -476,9 +479,12 @@
                 localStorage.setItem('importantDays_allUsers', JSON.stringify([]));
             }
 
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+
             if (localStorage.getItem('importantDays_user') && localStorage.getItem('importantDays_session_active') === 'true') {
                 window.location.href = 'index.html';
-            } else if (localStorage.getItem('importantDays_user') && localStorage.getItem('importantDays_session_active') !== 'true') {
+            } else if (mode === 'login' || (localStorage.getItem('importantDays_user') && localStorage.getItem('importantDays_session_active') !== 'true')) {
                 showStep('step-login');
             } else {
                 showStep('step-register');

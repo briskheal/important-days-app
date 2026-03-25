@@ -80,11 +80,10 @@ window.closeWelcomeModal = function() {
 function checkFirstLogin() {
     const user = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
     if (user.first_login !== false) {
-        // Welcome teaser is now on the hero section instead of a modal
-        // const modal = document.getElementById('welcome-modal');
-        // if (modal) modal.hidden = false;
+        const modal = document.getElementById('welcome-modal');
+        if (modal) modal.hidden = false;
         
-        // Mark as seen anyway
+        // Mark as seen anyway (user can still see it once)
         user.first_login = false;
         localStorage.setItem('importantDays_user', JSON.stringify(user));
     }
@@ -1765,17 +1764,24 @@ document.getElementById('prof-reset-pwd-btn')?.addEventListener('click', () => {
         allUsers[idx].password = newPwd;
         localStorage.setItem('importantDays_allUsers', JSON.stringify(allUsers));
     }
-    // Sync to server
+    // Sync to server - NO OTP REQUIRED FOR LOGGED IN USER
     fetch(getApiUrl('/api/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: user.phone, newPassword: newPwd })
-    }).catch(() => {});
-
-    alert("Password updated! Please log in again.");
-    localStorage.removeItem('importantDays_session_active');
-    localStorage.removeItem('importantDays_user');
-    window.location.replace('login.html');
+    }).then(res => res.json()).then(data => {
+        if (data.status === 'success') {
+            alert("Password updated! Please log in again.");
+            localStorage.removeItem('importantDays_session_active');
+            localStorage.removeItem('importantDays_user');
+            window.location.replace('login.html');
+        } else {
+            alert("Password update failed: " + (data.message || "Unknown error"));
+        }
+    }).catch(err => {
+        console.error("Reset error", err);
+        alert("Connection error. Could not update password.");
+    });
 });
 
 // ── Payment History & Receipt Logic ────────────────
