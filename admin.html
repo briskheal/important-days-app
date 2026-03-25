@@ -367,6 +367,11 @@
             border-color: #7c6fff;
         }
 
+        .modal-input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 0.85rem;
+        }
+
         .pwd-container {
             position: relative;
         }
@@ -456,7 +461,7 @@
         <div class="modal-content">
             <h2>🔐 Admin Login</h2>
             <div id="step1">
-                <input type="text" id="adminId" class="modal-input" placeholder="Master Admin ID (e.g. EMYRIS)" autocapitalize="none" spellcheck="false" autocomplete="off">
+                <input type="text" id="adminId" class="modal-input" placeholder="Admin ID" autocapitalize="none" spellcheck="false" autocomplete="off">
                 <div class="modal-btns">
                     <a href="index.html" class="modal-btn btn-m-cancel">← App</a>
                     <button class="modal-btn btn-m-ok" onclick="checkId()">Next →</button>
@@ -464,7 +469,7 @@
             </div>
             <div id="step2" style="display:none;">
                 <div class="pwd-container">
-                    <input type="password" id="adminPwd" class="modal-input" placeholder="Password (e.g. NEW@1306)">
+                    <input type="password" id="adminPwd" class="modal-input" placeholder="Password">
                     <button type="button" class="pwd-toggle" onclick="togglePwd()">👁️</button>
                 </div>
                 <div class="modal-btns">
@@ -774,7 +779,7 @@
             if (!confirm('Download User Registration Data (CSV)?\n\nNote: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
             const u = cachedUsers;
             if (!u || !u.length) { alert('No users in cache. Refresh dash first.'); return; }
-            const h = ['Name', 'Phone', 'Email', 'Address', 'City', 'Pincode', 'State', 'Login ID', 'Password', 'Registered'];
+            const h = ['Name', 'Phone', 'Email', 'Address', 'City', 'Pincode', 'State', 'Login ID', 'Registered'];
             const rows = u.map(x => [
                 `"${x.name || ''}"`, 
                 `"${x.phone || ''}"`, 
@@ -784,7 +789,6 @@
                 `"${x.pincode || ''}"`, 
                 `"${x.state || ''}"`, 
                 `"${x.loginId || ''}"`,
-                `"${x.password || ''}"`,
                 `"${x.timestamp ? new Date(x.timestamp).toLocaleString() : ''}"`
             ].join(','));
             const date = new Date().toISOString().split('T')[0];
@@ -795,7 +799,7 @@
             if (!confirm('Download Payment Records (CSV)?\n\nNote: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
             const l = cachedLedger; if (!l || !l.length) { alert('No payment records in cache. Refresh dash first.'); return; }
             const allUsers = cachedUsers;
-            const h = ['Name', 'Phone', 'Login ID', 'Password', 'Plan', 'Amount(₹)', 'UTR', 'Status', 'Submitted', 'ActionDate', 'Expiry'];
+            const h = ['Name', 'Phone', 'Login ID', 'Plan', 'Amount(₹)', 'UTR', 'Status', 'Submitted', 'ActionDate', 'Expiry'];
             const rows = l.map(r => {
                 const u = allUsers.find(ux => {
                     const norm = (s) => (s || '').replace(/\D/g, '');
@@ -805,7 +809,6 @@
                     `"${r.userName || ''}"`, 
                     `"${r.mobile || ''}"`, 
                     `"${u ? u.loginId : ''}"`,
-                    `"${u ? u.password : ''}"`,
                     `"${r.type || ''}"`, 
                     `"${r.amount || ''}"`, 
                     `"${r.txnId || ''}"`, 
