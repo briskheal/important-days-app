@@ -212,7 +212,9 @@ app.post('/api/login', async (req, res) => {
 // 3. ADMIN LOGIN
 app.post('/api/admin/login', async (req, res) => {
     try {
-        const { id, pwd } = req.body;
+        let { id, pwd } = req.body;
+        id = (id || '').trim();
+        pwd = (pwd || '').trim();
         console.log(`[INFO] Admin Login Attempt: ID=${id}`);
 
         let admin = await Admin.findOne({ id });

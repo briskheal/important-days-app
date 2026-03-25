@@ -359,7 +359,7 @@
                 <form onsubmit="handleActualLogin(event)">
                     <div class="form-group">
                         <label class="form-label">Login ID</label>
-                        <input type="text" id="auth-id" class="auth-input" placeholder="e.g. USR-ABCD" required />
+                        <input type="text" id="auth-id" class="auth-input" placeholder="e.g. USR-ABCD" required autocapitalize="none" spellcheck="false" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">Password</label>
@@ -376,9 +376,10 @@
                     </div>
                     <button type="submit" class="btn-primary">Sign In →</button>
                 </form>
-                <div class="auth-footer">
                     <p class="auth-subtitle">New here? <a href="#" onclick="showStep('step-register')" class="footer-link">Create account</a></p>
-                </div>
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.05); text-align: center;">
+                        <a href="admin.html" class="footer-link" style="opacity: 0.6; font-size: 0.75rem; letter-spacing: 0.5px;">⚡ ADMIN ACCESS PORTAL</a>
+                    </div>
             </div>
 
             <!-- STEP 4: Forgot Credentials -->
