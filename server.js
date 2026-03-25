@@ -138,23 +138,45 @@ app.get('/login', (req, res) => {
 
 app.use(express.static(__dirname));
 
-// Email Configuration
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-    family: 4, // Force IPv4 to avoid common cloud networking issues with IPv6
-    connectionTimeout: 20000,
-    greetingTimeout: 20000,
-    socketTimeout: 20000
-});
+// ── EMAIL CONFIGURATION (Mailjet API via Axios) ──────────────────
+async function sendEmail({ to, subject, text, html }) {
+    if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_SECRET_KEY) {
+        console.error("[ERR] Mailjet credentials missing in environment!");
+        return;
+    }
+
+    const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_SECRET_KEY}`).toString('base64');
+    try {
+        const response = await axios.post('https://api.mailjet.com/v3.1/send', {
+            Messages: [
+                {
+                    From: {
+                        Email: process.env.EMAIL_USER,
+                        Name: "Important Days"
+                    },
+                    To: [
+                        {
+                            Email: to
+                        }
+                    ],
+                    Subject: subject,
+                    TextPart: text,
+                    HTMLPart: html
+                }
+            ]
+        }, {
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        console.log(`[OK] Email (Mailjet API) SENT to ${to}`);
+        return response.data;
+    } catch (error) {
+        const errDetail = error.response ? JSON.stringify(error.response.data) : error.message;
+        console.error(`[ERR] Email (Mailjet API) FAILED for ${to}:`, errDetail);
+    }
+}
 
 // ── API ROUTES ──────────────────────────────────
 
@@ -336,8 +358,7 @@ app.post('/api/notify-payment', async (req, res) => {
         console.log(`[INFO] Processing Payment: User=${userName}, Mobile=${mobile}, UTR=${txnId}, Amount=${amount}, Type=${type}`);
 
         // Email to Admin
-        const adminMailOptions = {
-            from: `"Important Days Admin" <${process.env.EMAIL_USER}>`,
+        await sendEmail({
             to: process.env.EMAIL_USER,
             subject: `🔔 New Subscription Payment: ${userName}`,
             text: `New payment received.\n\nUser: ${userName}\nMobile: ${mobile}\nPlan: ${type}\nAmount: ${amount}\nUTR: ${txnId}`,
@@ -353,11 +374,6 @@ app.post('/api/notify-payment', async (req, res) => {
                     <p style="font-size: 0.8rem; color: #666;">Please verify this in the Admin Dashboard.</p>
                 </div>
             `
-        };
-        await transporter.sendMail(adminMailOptions).then(() => {
-            console.log(`[OK] Admin Notification Email SENT to ${process.env.EMAIL_USER}`);
-        }).catch(e => {
-            console.error("[ERR] Admin Notification Email Failed:", e.message);
         });
 
         // Save to MongoDB
@@ -369,8 +385,7 @@ app.post('/api/notify-payment', async (req, res) => {
 
         // Email to Customer
         if (customerEmail && customerEmail.includes('@')) {
-            const customerMailOptions = {
-                from: `"Important Days" <${process.env.EMAIL_USER}>`,
+            await sendEmail({
                 to: customerEmail,
                 subject: `Payment Received - Verification in Progress`,
                 text: `Dear ${userName},\n\nWe received your payment of Rs. ${amount}. Your UTR is ${txnId}.\nVerification is in progress and usually takes less than 24 hours.`,
@@ -385,11 +400,6 @@ app.post('/api/notify-payment', async (req, res) => {
                         <p style="font-size: 0.8rem; color: #666;">Thank you for your support!</p>
                     </div>
                 `
-            };
-            await transporter.sendMail(customerMailOptions).then(() => {
-                console.log(`[OK] Customer Receipt Email SENT to ${customerEmail}`);
-            }).catch(e => {
-                console.error("[ERR] Customer Receipt Email Failed:", e.message);
             });
         } else {
             console.log(`[INFO] No customer email provided, skipping receipt.`);
@@ -458,8 +468,7 @@ app.post('/api/notify-status', async (req, res) => {
         const { email, name, statusText, msgText } = data;
 
         if (email && email.includes('@')) {
-            await transporter.sendMail({
-                from: `"Important Days" <${process.env.EMAIL_USER}>`,
+            await sendEmail({
                 to: email,
                 subject: `Subscription Update: ${statusText}`,
                 text: `Dear ${name},\n\n${msgText}\n\nThank you!`,
@@ -473,9 +482,6 @@ app.post('/api/notify-status', async (req, res) => {
                         <p style="font-size: 0.8rem; color: #666;">Important Days App Team</p>
                     </div>
                 `
-            }).catch(e => {
-                console.error("[ERR] Status Update Email Failed:", e.message);
-                console.error("[DEBUG] Full Error:", e);
             });
         }
         res.status(200).send("OK");
@@ -591,12 +597,11 @@ app.post('/api/admin/test-email', async (req, res) => {
         
         console.log(`[INFO] Admin triggered email test to ${process.env.EMAIL_USER}`);
         
-        await transporter.sendMail({
-            from: `"Email Test" <${process.env.EMAIL_USER}>`,
+        await sendEmail({
             to: process.env.EMAIL_USER,
             subject: "🛠️ Admin Email Test - Important Days App",
-            text: "This is a direct test of the SMTP configuration from the server.",
-            html: `<h3>SMTP Test Successful!</h3><p>Your server at <b>${req.headers.host}</b> is able to send emails correctly.</p>`
+            text: "This is a direct test of the Mailjet API configuration from the server.",
+            html: `<h3>Mailjet API Test Successful!</h3><p>Your server at <b>${req.headers.host}</b> is able to send emails correctly via HTTPS.</p>`
         });
 
         res.json({ status: 'success', message: 'Test email sent successfully.' });
