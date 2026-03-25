@@ -140,9 +140,7 @@ app.use(express.static(__dirname));
 
 // Email Configuration
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Port 465 is more reliable for direct SSL/TLS in cloud environments
+    service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
