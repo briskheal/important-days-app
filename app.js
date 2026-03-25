@@ -891,8 +891,8 @@ const ContentUI = {
                         <button id="DCM-IG" title="Share on Instagram" style="background:linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); color:#fff; border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.9rem; transition:0.2s;">📸</button>
                     </div>
                 </div>
-                <!-- Auto Post Button (Shown only if links linked) -->
-                <div id="DCM-AUTO-POST-WRAP" style="padding: 0 20px 16px; display: none;">
+                <!-- Auto Post Button (Shown always, with warning if no links) -->
+                <div id="DCM-AUTO-POST-WRAP" style="padding: 0 20px 16px;">
                     <button id="DCM-POST-ALL" style="width: 100%; padding: 12px; border-radius: 12px; background: linear-gradient(135deg, #7c6fff, #43d08a); border: none; color: #fff; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(124, 111, 255, 0.3); transition: 0.3s;">
                         🚀 1-Click Post to All Linked Profiles
                     </button>
@@ -1049,12 +1049,8 @@ const ContentUI = {
             // Update Auto-Post visibility
             const u = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
             const hasAnyLink = (u.xLink || u.fbLink || u.liLink || u.igLink);
-            const autoWrap = document.getElementById('DCM-AUTO-POST-WRAP');
+            // autoWrap is now always visible as per user's requirement to show the button
             const nudgeWrap = document.querySelector('#DCM-LINK-PROFILES')?.parentElement;
-            
-            if (autoWrap) {
-                autoWrap.style.display = hasAnyLink ? 'block' : 'none';
-            }
             
             if (nudgeWrap) {
                 if (hasAnyLink) {
@@ -1447,15 +1443,16 @@ window.confirmSubscription = function () {
         expiry.setFullYear(now.getFullYear() + 1);
     }
 
+    const user = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
     const subData = {
         type: window.pendingSub.type,
         expiry: expiry.toISOString(),
         status: 'pending',
         paidAt: now.toISOString(),
         txnId: txnId,
-        mobile: activeUserObj.phone,
-        email: activeUserObj.email,
-        userName: activeUserObj.name,
+        mobile: user.phone || 'Unknown',
+        email: user.email || '',
+        userName: user.name || 'User',
         amount: window.pendingSub.amount
     };
 

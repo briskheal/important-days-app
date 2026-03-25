@@ -317,7 +317,7 @@ app.post('/api/notify-payment', async (req, res) => {
         if (typeof data === 'string') data = JSON.parse(data);
 
         const { userName, mobile, type, amount, txnId, email: customerEmail } = data;
-        console.log(`[INFO] Payment Notification: User=${userName}, UTR=${txnId}`);
+        console.log(`[INFO] Payment Notification RECEIVED: User=${userName}, Mobile=${mobile}, UTR=${txnId}, Amount=${amount}, Type=${type}`);
 
         // Email to Admin
         const adminMailOptions = {
@@ -461,7 +461,10 @@ app.get('/api/content', async (req, res) => {
         // Variant 2: Generic Awareness / Educational
         variants.push(`🔍 Did you know today is ${name}? It's a day dedicated to raising awareness, celebrating milestones, and understanding the deep significance of this event. Let's make a positive impact together by sharing the word!`);
 
-        // Variant 3: Wikipedia-based (Rich Content)
+        // Variant 3: Global Impact & Legacy
+        variants.push(`🌍 ${name} is more than just a date on the calendar; it's a testament to our global heritage and the ongoing efforts to create a better world. Its legacy inspires us to continue advocate for positive change and community strength.`);
+
+        // Variant 4: Wikipedia-based (Rich Content)
         try {
             const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name.replace(/ /g, "_"))}`;
             const wikiRes = await axios.get(wikiUrl, {
@@ -478,12 +481,12 @@ app.get('/api/content', async (req, res) => {
             }
         } catch (e) {
             console.warn(`[WARN] Wiki fetch failed for ${name}: ${e.message}`);
-            // Fallback for Variant 3 if Wiki fails
+            // Fallback for Variant 4 if Wiki fails
             variants.push(`🌟 Let's take a moment to acknowledge the importance of ${name}. Whether it's through learning more about its history or sharing its values with others, every small action counts in making this day meaningful.`);
         }
 
-        // Ensure we always have at least 3 variants
-        while (variants.length < 3) {
+        // Ensure we always have at least 4 variants
+        while (variants.length < 4) {
             variants.push(`🌈 Celebrating ${name} today! A perfect opportunity to learn, grow, and share the significance of this special observance with your network.`);
         }
 
