@@ -1437,12 +1437,8 @@ const UPI_NAME = 'Important Days App';
 window.initiatePayment = function (amount, type) {
     const note = `Subscription-${type}`;
     const label = type === 'monthly' ? `Monthly \u2013 \u20b9${amount}` : `Annual \u2013 \u20b9${amount}`;
-
-    // Generic UPI deep-link (QR encodes this)
     const upiParams = `pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
     const genericUpi = `upi://pay?${upiParams}`;
-
-    // QR code image
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(genericUpi)}&color=0b0e1a&bgcolor=ffffff`;
 
     // Populate UI
@@ -1450,13 +1446,48 @@ window.initiatePayment = function (amount, type) {
     document.getElementById('pay-plan-label').textContent = label;
     document.getElementById('txn-id').value = '';
 
+    // Add Deep Link Buttons for Mobile Users with Premium Styling
+    const upiAppButtons = `
+        <style>
+            .upi-app-btn { transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1) !important; background: rgba(255,255,255,0.05) !important; color: white !important; }
+            .upi-app-btn:hover { transform: translateY(-3px); background: rgba(255,255,255,0.1) !important; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); border-color: var(--accent-main) !important; }
+            .gpay-btn:hover { color: #4285f4 !important; }
+            .phonepe-btn:hover { color: #5f259f !important; }
+            .paytm-btn:hover { color: #00b9f1 !important; }
+        </style>
+        <div class="upi-app-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0;">
+            <a href="googlepay://pay?${upiParams}" class="upi-app-btn gpay-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:16px; font-weight:700; font-size:0.9rem;">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gpay_512dp.png" width="20" height="20"> GPay
+            </a>
+            <a href="phonepe://pay?${upiParams}" class="upi-app-btn phonepe-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:16px; font-weight:700; font-size:0.9rem;">
+                <img src="https://vignette.wikia.nocookie.net/logopedia/images/e/e3/PhonePe_Logo.png/revision/latest?cb=20200325173007" width="20" height="20"> PhonePe
+            </a>
+            <a href="paytmmp://pay?${upiParams}" class="upi-app-btn paytm-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:16px; font-weight:700; font-size:0.9rem;">
+                <img src="https://logodix.com/logo/1818161.png" width="20" height="20"> Paytm
+            </a>
+            <a href="${genericUpi}" class="upi-app-btn other-upi-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:16px; font-weight:700; font-size:0.9rem;">
+                 <span style="font-size:1.1rem;">⚡</span> Other UPI
+            </a>
+        </div>
+        <p style="font-size:0.8rem; color:var(--text-secondary); text-align:center; margin-bottom:20px; opacity:0.8;">Tap an app to open it with the details pre-filled.</p>
+    `;
+
+    // Target the specific area before the UTR input
+    let upiActions = document.getElementById('upi-app-actions');
+    if (!upiActions) {
+        upiActions = document.createElement('div');
+        upiActions.id = 'upi-app-actions';
+        const qrContainer = document.querySelector('.pay-qr-container');
+        if (qrContainer) qrContainer.parentNode.insertBefore(upiActions, qrContainer.nextSibling);
+    }
+    upiActions.innerHTML = upiAppButtons;
+
     // Hide plan grid, show payment gateway
     document.querySelector('.sub-plans-grid').style.display = 'none';
     const introEl = document.querySelector('.sub-intro');
     if (introEl) introEl.style.display = 'none';
     document.getElementById('upi-section').style.display = 'block';
-    document.getElementById('upi-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
+    
     window.pendingSub = { type, amount };
 };
 
