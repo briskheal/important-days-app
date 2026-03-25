@@ -459,6 +459,12 @@
 
         // On Load Logic
         window.addEventListener('DOMContentLoaded', () => {
+            // Wake up server immediately
+            if (window.location.protocol !== 'file:') {
+                console.log("[INFO] Waking up server...");
+                fetch(getApiUrl('/api/ping')).catch(() => {});
+            }
+
             if (!localStorage.getItem('importantDays_allUsers')) {
                 localStorage.setItem('importantDays_allUsers', JSON.stringify([]));
             }

@@ -148,6 +148,10 @@ app.get('/health', (req, res) => {
     });
 });
 
+app.get('/api/ping', (req, res) => {
+    res.json({ status: 'warm', timestamp: new Date().toISOString() });
+});
+
 // Redirect /login to /login.html
 app.get('/login', (req, res) => {
     res.redirect('/login.html');

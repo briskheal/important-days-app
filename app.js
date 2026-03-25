@@ -4,13 +4,21 @@
 
 'use strict';
 
-// ── API URL Helper for Local/File Protocol Support ──────────────────
+// ── API URL Helper ──────────────────
 function getApiUrl(path) {
     if (window.location.protocol === 'file:') {
         return `http://localhost:8083${path}`;
     }
     return path;
 }
+
+// ── Server Warm-up (Ping) ──────────────────
+(function wakeUpServer() {
+    if (window.location.protocol !== 'file:') {
+        console.log("[INFO] Waking up server...");
+        fetch(getApiUrl('/api/ping')).catch(() => {});
+    }
+})();
 
 // ── Auth Check ─────────────────────────────
 if (localStorage.getItem('importantDays_session_active') !== 'true') {
@@ -1466,9 +1474,10 @@ window.copyUpiId = function () {
     });
 };
 
-window.confirmSubscription = function () {
+window.confirmSubscription = async function () {
     if (!window.pendingSub) return;
 
+    const btn = document.querySelector('#upi-section .pay-submit-btn');
     const txnId = document.getElementById('txn-id').value.trim();
     // Validate 12-digit UTR
     const utrRegex = /^\d{12}$/;
@@ -1480,13 +1489,14 @@ window.confirmSubscription = function () {
         return;
     }
 
+    const originalBtnText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "⌛ Saving Transaction...";
+
     const now = new Date();
     let expiry = new Date();
-    if (window.pendingSub.type === 'monthly') {
-        expiry.setDate(now.getDate() + 30);
-    } else {
-        expiry.setFullYear(now.getFullYear() + 1);
-    }
+    if (window.pendingSub.type === 'monthly') expiry.setDate(now.getDate() + 30);
+    else expiry.setFullYear(now.getFullYear() + 1);
 
     const user = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
     const subData = {
@@ -1501,41 +1511,50 @@ window.confirmSubscription = function () {
         amount: window.pendingSub.amount
     };
 
-    const subKey = user.phone ? `importantDays_subscription_${user.phone}` : 'importantDays_subscription';
-    localStorage.setItem(subKey, JSON.stringify(subData));
+    try {
+        // 1. SAVE TO BACKEND FIRST (AWAIT SUCCESS)
+        const response = await fetch(getApiUrl('/api/notify-payment'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(subData)
+        });
 
-    // Write to payment ledger – admin.html reads this
-    const ledger = JSON.parse(localStorage.getItem('importantDays_paymentLedger') || '[]');
-    ledger.push(subData);
-    localStorage.setItem('importantDays_paymentLedger', JSON.stringify(ledger));
+        if (response.ok) {
+            // 2. SYNC TO LOCAL ONLY AFTER BACKEND CONFIRMS
+            const subKey = user.phone ? `importantDays_subscription_${user.phone}` : 'importantDays_subscription';
+            localStorage.setItem(subKey, JSON.stringify(subData));
 
-    // Notify Server to send both Admin and Customer emails via SMTP
-    fetch(getApiUrl('/api/notify-payment'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subData)
-    }).catch(err => console.error("Backend email notification failed", err));
+            const ledger = JSON.parse(localStorage.getItem('importantDays_paymentLedger') || '[]');
+            ledger.push(subData);
+            localStorage.setItem('importantDays_paymentLedger', JSON.stringify(ledger));
 
-    // Show success UI
-    window.showToast("UTR received — activation within 24 hours", "success");
+            // 3. SHOW SUCCESS UI
+            document.getElementById('upi-section').innerHTML = `
+                <div class="pay-success">
+                    <div class="pay-success-icon">🎉</div>
+                    <div class="pay-success-title">UTR Submitted Successfully!</div>
+                    <p class="pay-success-msg">Your transaction is now <strong>Pending Approval</strong>.<br>
+                    Activation usually takes less than 24 hours.</p>
+                    <div style="margin: 16px 0; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 12px; font-size: 0.8rem; color: #10b981;">
+                        UTR: <strong>${txnId}</strong><br>
+                        Confirmation email will be sent within 5 mins.
+                    </div>
+                    <button onclick="document.getElementById('fixed-sub-modal').hidden=true; window.location.reload();"
+                        class="pay-submit-btn">Close & Continue</button>
+                </div>`;
 
-    document.getElementById('upi-section').innerHTML = `
-      <div class="pay-success">
-        <div class="pay-success-icon">🎉</div>
-        <div class="pay-success-title">UTR Submitted Successfully!</div>
-        <p class="pay-success-msg">Your transaction is now <strong>Pending Approval</strong>.<br>
-        Activation usually takes less than 24 hours.</p>
-        <div style="margin: 16px 0; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 12px; font-size: 0.8rem; color: #10b981;">
-          UTR: <strong>${txnId}</strong><br>
-          Confirmation email has been sent.
-        </div>
-        <button onclick="document.getElementById('fixed-sub-modal').hidden=true; window.location.reload();"
-          class="pay-submit-btn">Close &amp; Continue</button>
-      </div>`;
-
-    // Notify Admin via WhatsApp
-    const waMsg = `Hello Admin, New Payment Received!%0AUser: ${activeUserObj.name}%0APhone: ${activeUserObj.phone}%0APlan: ${window.pendingSub.type.toUpperCase()}%0AAmount: ₹${window.pendingSub.amount}%0AUTR: ${txnId}%0APlease approve the subscription.`;
-    window.open(`https://wa.me/918878923337?text=${waMsg}`, '_blank');
+            // 4. WhatsApp Backup Notification
+            const waMsg = `Hello Admin, New Payment Received!%0AUser: ${user.name}%0APhone: ${user.phone}%0APlan: ${window.pendingSub.type.toUpperCase()}%0AAmount: ₹${window.pendingSub.amount}%0AUTR: ${txnId}%0APlease approve.`;
+            window.open(`https://wa.me/918878923337?text=${waMsg}`, '_blank');
+        } else {
+            throw new Error("Server rejected the payment data.");
+        }
+    } catch (err) {
+        console.error("Payment notification failed", err);
+        alert("⚠️ Connection Error. Your payment info was NOT saved on the server. Please check your internet and click 'Confirm Payment' again.");
+        btn.disabled = false;
+        btn.textContent = originalBtnText;
+    }
 };
 
 // ── Pincode → State Auto-Fill (Profile Modal) ──
