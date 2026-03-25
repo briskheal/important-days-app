@@ -296,7 +296,7 @@
                         </div>
                     </div>
 
-                    <div id="extra-fields" style="display: none;">
+                    <div id="registration-fields">
                         <div class="form-grid">
                             <div class="form-group">
                                 <label class="form-label">Full Name</label>
@@ -384,7 +384,10 @@
 
             <!-- STEP 4: Forgot Credentials -->
             <div id="step-forgot" class="auth-step">
-                <form onsubmit="handleForgot(event)">
+                <form id="forgot-form" onsubmit="handleForgot(event)">
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px; text-align: center;">
+                        Enter your registered phone number. We will send a security code to your email.
+                    </p>
                     <div class="form-group">
                         <label class="form-label">Phone Number</label>
                         <div class="input-row">
@@ -395,20 +398,24 @@
                             <input type="tel" id="forgot-phone" class="auth-input" placeholder="98765 43210" required />
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary">Recover Account</button>
+                    <button type="submit" class="btn-primary">Send Security Code</button>
                 </form>
 
-                <div id="forgot-result" style="display: none; margin-top: 32px;">
-                    <div class="creds-box">
-                        <div class="creds-label">Your Login ID</div>
-                        <div id="recovered-id" class="creds-value">USR-XXXX</div>
+                <div id="otp-section" style="display: none; margin-top: 24px;">
+                    <div style="background: rgba(16, 185, 129, 0.1); padding: 16px; border-radius: 12px; margin-bottom: 24px; text-align: center; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <p style="font-size: 0.85rem; color: #10b981; margin: 0;">✅ Code sent to <strong id="masked-email">m***@gmail.com</strong></p>
                     </div>
+                    
                     <form onsubmit="handleResetPassword(event)">
                         <div class="form-group">
-                            <label class="form-label">New Password</label>
-                            <input type="password" id="new-pwd" class="auth-input" placeholder="Enter new password" required />
+                            <label class="form-label">6-Digit Security Code</label>
+                            <input type="text" id="reset-otp" class="auth-input" placeholder="Enter OTP" maxlength="6" required style="letter-spacing: 4px; text-align: center; font-weight: 700;" />
                         </div>
-                        <button type="submit" class="btn-primary">Update Password</button>
+                        <div class="form-group">
+                            <label class="form-label">New Password</label>
+                            <input type="password" id="new-pwd" class="auth-input" placeholder="Create new password" required />
+                        </div>
+                        <button type="submit" class="btn-primary">Reset & Login</button>
                     </form>
                 </div>
 
@@ -565,10 +572,8 @@
                 console.warn("Server check failed", err);
             }
 
-            // If not found anywhere, show extra fields for registration
-            document.getElementById('extra-fields').style.display = 'block';
-            document.getElementById('login-name').required = true;
-            document.getElementById('login-email').required = true;
+            // Show registration fields if not found
+            // (Always visible now, but kept for structural consistency)
         }
 
         // Store last generated creds globally for auto-fill
@@ -696,10 +701,16 @@
 
         async function handleForgot(e) {
             e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalBtnText = btn.textContent;
+            
+            const btnSpinner = '<span class="spinning">⌛</span>';
             const phone = document.getElementById('forgot-phone').value.trim();
             const ccode = document.getElementById('forgot-ccode').value.trim();
-            // Robust normalization: send both raw and ccode to let server handle it
             const fullPhone = ccode + ' ' + phone; 
+
+            btn.disabled = true;
+            btn.innerHTML = `${btnSpinner} Sending Code...`;
 
             try {
                 const res = await fetch(getApiUrl('/api/recover-account'), {
@@ -708,52 +719,67 @@
                     body: JSON.stringify({ phone: fullPhone })
                 });
 
+                const data = await res.json();
                 if (res.ok) {
-                    const data = await res.json();
-                    document.getElementById('recovered-id').textContent = data.loginId;
-                    document.getElementById('forgot-result').style.display = 'block';
-                    window._resetPhone = fullPhone;
-                } else if (res.status === 503) {
-                    const data = await res.json();
-                    alert(`⚠️ ${data.message || 'Database connection failed.'}`);
+                    document.getElementById('forgot-form').style.display = 'none';
+                    document.getElementById('otp-section').style.display = 'block';
+                    document.getElementById('masked-email').textContent = data.emailMasked;
+                    window._resetPhone = fullPhone; // Store for Step 2
+                    if (window.showToast) window.showToast("Security code sent to your email", "success");
                 } else {
-                    alert("Account not found on server.");
+                    alert(data.message || "Account not found on server.");
                 }
             } catch (err) {
+                console.error("Recovery failed", err);
                 alert("Connection error. Please try again.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalBtnText;
             }
         }
 
         async function handleResetPassword(e) {
             e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalBtnText = btn.textContent;
+            
+            const otp = document.getElementById('reset-otp').value.trim();
             const newPwd = document.getElementById('new-pwd').value.trim();
-            if (!newPwd) return alert("Enter new password");
+            
+            if (otp.length !== 6) return alert("Please enter the 6-digit code.");
+            if (newPwd.length < 4) return alert("Password must be at least 4 chars.");
+
+            btn.disabled = true;
+            btn.textContent = '⌛ Verifying...';
 
             try {
                 const res = await fetch(getApiUrl('/api/reset-password'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: window._resetPhone, newPassword: newPwd })
+                    body: JSON.stringify({ phone: window._resetPhone, otp, newPassword: newPwd })
                 });
 
+                const data = await res.json();
                 if (res.ok) {
-                    alert("Password updated on server!");
-                    showStep('step-login');
-                    // Sync local as well
+                    alert("🎉 Password reset successful! You can now login with your new password.");
+                    // Sync local storage for this user
                     const allUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
                     const idx = allUsers.findIndex(u => u.phone === window._resetPhone);
                     if (idx !== -1) {
                         allUsers[idx].password = newPwd;
                         localStorage.setItem('importantDays_allUsers', JSON.stringify(allUsers));
                     }
-                } else if (res.status === 503) {
-                    const data = await res.json();
-                    alert(`⚠️ ${data.message || 'Database connection failed.'}`);
+                    
+                    showStep('step-login');
                 } else {
-                    alert("Failed to reset password.");
+                    alert(data.message || "Invalid or expired security code.");
                 }
             } catch (err) {
+                console.error("Reset failed", err);
                 alert("Connection error. Please try again.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalBtnText;
             }
         }
 

@@ -70,7 +70,7 @@ app.use(checkDb);
 const userSchema = new mongoose.Schema({
     name: String,
     phone: { type: String, unique: true, required: true },
-    email: String,
+    email: { type: String, required: true },
     address: String,
     city: String,
     pincode: String,
@@ -78,7 +78,9 @@ const userSchema = new mongoose.Schema({
     loginId: { type: String, unique: true },
     password: { type: String, default: '1306' },
     createdAt: { type: Date, default: Date.now },
-    first_login: { type: Boolean, default: true }
+    first_login: { type: Boolean, default: true },
+    resetOtp: String,
+    resetOtpExpiry: Date
 }, { strict: false });
 
 const paymentSchema = new mongoose.Schema({
@@ -181,7 +183,9 @@ async function sendEmail({ to, subject, text, html }) {
 app.post('/api/register', async (req, res) => {
     try {
         const data = req.body;
-        if (!data.phone) return res.status(400).send('Missing phone');
+        if (!data.phone || !data.email) {
+            return res.status(400).json({ error: "Phone and Email are both mandatory for security." });
+        }
 
         const normalizedPhone = normPhone(data.phone);
         let user = await findUserByPhone(normalizedPhone);
@@ -298,7 +302,7 @@ app.post('/api/admin/login', async (req, res) => {
     }
 });
 
-// 4. RECOVER ACCOUNT
+// 4. RECOVER ACCOUNT (Step 1: Get Login ID & Send OTP)
 app.post('/api/recover-account', async (req, res) => {
     try {
         const { phone } = req.body;
@@ -307,8 +311,43 @@ app.post('/api/recover-account', async (req, res) => {
         let user = await findUserByPhone(phone);
         
         if (user) {
-            console.log(`[OK] Account recovered for: ${user.name} (${user.phone})`);
-            res.json({ status: 'success', loginId: user.loginId, name: user.name });
+            // Generate OTP
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            user.resetOtp = otp;
+            user.resetOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+            await user.save();
+
+            // Send OTP via Email
+            if (user.email) {
+                try {
+                    await sendEmail({
+                        to: user.email,
+                        subject: "🔑 Security Code: Reset Password - Important Days",
+                        text: `Hello ${user.name},\n\nYour 6-digit security code for resetting your password is: ${otp}\n\nThis code is valid for 10 minutes. If you did not request this, please ignore this email.`,
+                        html: `
+                            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
+                                <h2 style="color: #6366f1;">Password Reset</h2>
+                                <p>Hello <b>${user.name}</b>,</p>
+                                <p>You requested to reset your password. Use the security code below to proceed:</p>
+                                <div style="background: #f4f4f5; padding: 15px; border-radius: 8px; font-size: 1.5rem; letter-spacing: 5px; text-align: center; color: #1e293b; font-weight: 700;">
+                                    ${otp}
+                                </div>
+                                <p style="font-size: 0.8rem; color: #64748b; margin-top: 20px;">
+                                    This code is valid for 10 minutes. <br>
+                                    If you did not request this, please ignore this email.
+                                </p>
+                                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                                <p style="font-size: 0.8rem; color: #94a3b8;">Important Days App Security Team</p>
+                            </div>
+                        `
+                    });
+                    console.log(`[OK] Reset OTP sent to ${user.email}`);
+                } catch (e) {
+                    console.error("[ERR] Failed to send Reset OTP:", e.message);
+                }
+            }
+
+            res.json({ status: 'success', loginId: user.loginId, name: user.name, emailMasked: maskEmail(user.email) });
         } else {
             console.warn(`[WARN] Recovery failed for phone: ${phone}`);
             res.status(404).json({ status: 'error', message: 'Account not found. Please register first.' });
@@ -319,18 +358,38 @@ app.post('/api/recover-account', async (req, res) => {
     }
 });
 
-// 5. RESET PASSWORD
+// Helper: Mask email for privacy (e.g. m***@gmail.com)
+function maskEmail(email) {
+    if (!email) return "no email registered";
+    const [user, domain] = email.split('@');
+    if (user.length <= 2) return `*@${domain}`;
+    return `${user[0]}***${user[user.length - 1]}@${domain}`;
+}
+
+// 5. RESET PASSWORD (Step 2: Verify OTP & Change Password)
 app.post('/api/reset-password', async (req, res) => {
     try {
-        const { phone, newPassword } = req.body;
-        if (!phone || !newPassword) return res.status(400).json({ error: "Phone and Password required" });
+        const { phone, otp, newPassword } = req.body;
+        if (!phone || !otp || !newPassword) return res.status(400).json({ error: "Phone, OTP and Password required" });
         
         let user = await findUserByPhone(phone);
         
         if (user) {
+            // VERIFY OTP
+            if (!user.resetOtp || user.resetOtp !== otp) {
+                return res.status(400).json({ status: 'error', message: 'Invalid or incorrect security code.' });
+            }
+            if (new Date() > user.resetOtpExpiry) {
+                return res.status(400).json({ status: 'error', message: 'Security code has expired. Please request a new one.' });
+            }
+
+            // Clear OTP and set new password
             user.password = newPassword;
+            user.resetOtp = null;
+            user.resetOtpExpiry = null;
             await user.save();
-            console.log(`[OK] Password reset for: ${user.name} (${user.phone})`);
+            
+            console.log(`[OK] Secure password reset for: ${user.name} (${user.phone})`);
             res.json({ status: 'success' });
         } else {
             console.warn(`[WARN] Password reset failed for phone: ${phone}`);
