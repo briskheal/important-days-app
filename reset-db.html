@@ -107,6 +107,17 @@
         <h1>🧹 Reset Database</h1>
         <p>This action will permanently delete all users and payment records from the server and clear your local session. This cannot be undone.</p>
         
+        <div style="margin-bottom: 24px; text-align: left;">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Admin ID</label>
+                <input type="text" id="admin-id" placeholder="Enter ID" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-family: inherit;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Admin Password</label>
+                <input type="password" id="admin-pwd" placeholder="Enter Password" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-family: inherit;">
+            </div>
+        </div>
+        
         <button id="reset-btn" class="btn btn-reset" onclick="performReset()">Erase All Data</button>
         <button id="cancel-btn" class="btn btn-cancel" onclick="window.location.href='landing.html'">Cancel</button>
 
@@ -123,6 +134,14 @@
         }
 
         async function performReset() {
+            const id = document.getElementById('admin-id').value.trim();
+            const pwd = document.getElementById('admin-pwd').value.trim();
+            
+            if (!id || !pwd) {
+                alert("Please enter Admin ID and Password.");
+                return;
+            }
+
             if (!confirm("Are you absolutely sure? This will delete EVERYTHING.")) return;
             
             const btn = document.getElementById('reset-btn');
@@ -136,7 +155,7 @@
                 const res = await fetch(getApiUrl('/api/admin/reset-db'), { 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: 'EMYRIS', pwd: 'NEW@1306' })
+                    body: JSON.stringify({ id, pwd })
                 });
                 
                 if (res.ok) {

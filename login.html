@@ -767,16 +767,25 @@
 
                 const data = await res.json();
                 if (res.ok) {
-                    alert("🎉 Password reset successful! You can now login with your new password.");
-                    // Sync local storage for this user
+                    alert("🎉 Password reset successful! Your LOGIN ID is: " + data.loginId);
+                    
+                    // Sync local storage for this user (including loginId)
                     const allUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
                     const idx = allUsers.findIndex(u => u.phone === window._resetPhone);
                     if (idx !== -1) {
                         allUsers[idx].password = newPwd;
+                        allUsers[idx].loginId = data.loginId; // Ensure ID is saved locally
                         localStorage.setItem('importantDays_allUsers', JSON.stringify(allUsers));
                     }
                     
                     showStep('step-login');
+                    // Pre-fill login ID
+                    const authIdInput = document.getElementById('auth-id');
+                    if (authIdInput) {
+                        authIdInput.value = data.loginId;
+                        authIdInput.style.borderColor = "#10b981";
+                        setTimeout(() => { authIdInput.style.borderColor = ""; }, 3000);
+                    }
                 } else {
                     alert(data.message || "Invalid or expired security code.");
                 }

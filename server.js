@@ -431,7 +431,7 @@ app.post('/api/reset-password', async (req, res) => {
             await user.save();
             
             console.log(`[OK] Password updated for: ${user.name} (${user.phone})`);
-            res.json({ status: 'success' });
+            res.json({ status: 'success', loginId: user.loginId });
         } else {
             console.warn(`[WARN] Password update failed for phone: ${phone}`);
             res.status(404).json({ status: 'error', message: 'Account not found. Update failed.' });
