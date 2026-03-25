@@ -1296,7 +1296,36 @@ async function openContentModal(mmdd, eventName, category) {
     // Force-close subscription modal if open
     document.getElementById('fixed-sub-modal')?.setAttribute('hidden', '');
 
-    // Reset ContentUI state
+    // Trial Expiration Restriction Logic
+    if (!isUserSubscribed()) {
+        const user = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
+        const regDate = new Date(user.createdAt || new Date());
+        const diffDays = Math.ceil(Math.abs(new Date() - regDate) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays > 10) {
+            ContentUI.show(ev.name, false); 
+            ContentUI.body.innerHTML = `
+                <div style="text-align:center; padding:40px 20px;">
+                    <div style="font-size:3rem; margin-bottom:20px;">🔒</div>
+                    <div class="blink-text" style="font-size:1.1rem; line-height:1.6; margin-bottom:30px; text-transform:uppercase;">
+                        FREE TRAIL PERIOD IS OVER.<br>DO SUBSCRIBE FOR CONTENT EXTRACTION AND POSTING
+                    </div>
+                    <button onclick="showSubscriptionModal()" style="background:linear-gradient(135deg, #7c6fff, #43d08a); color:#fff; border:none; padding:14px 30px; border-radius:12px; font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 10px 20px rgba(124,111,255,0.3); width:100%;">
+                        💎 Subscribe Now — Get Access!
+                    </button>
+                    <p style="margin-top:20px; font-size:0.85rem; color:#9ca3af; opacity:0.8;">
+                        Keep your social presence alive with premium awareness content.
+                    </p>
+                </div>
+            `;
+            // Hide premium UI elements
+            if (ContentUI.refreshBtn) ContentUI.refreshBtn.style.display = 'none';
+            document.getElementById('DCM-X')?.parentElement?.style.setProperty('display', 'none', 'important');
+            document.getElementById('DCM-AUTO-POST-WRAP')?.style.setProperty('display', 'none', 'important');
+            return;
+        }
+    }
+
     ContentUI.variants = [];
     ContentUI.currentIndex = 0;
     ContentUI.show(ev.name, true);
