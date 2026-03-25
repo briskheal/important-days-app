@@ -328,7 +328,10 @@ app.post('/api/notify-payment', async (req, res) => {
             subject: `New Subscription Payment: ${userName} (${type})`,
             text: `New payment received.\n\nUser: ${userName}\nMobile: ${mobile}\nPlan: ${type}\nAmount: ${amount}\nUTR: ${txnId}`
         };
-        await transporter.sendMail(adminMailOptions).catch(e => console.error("Admin Email Fail:", e));
+        await transporter.sendMail(adminMailOptions).catch(e => {
+            console.error("[ERR] Admin Notification Email Failed:", e.message);
+            console.error("[DEBUG] Full Error:", e);
+        });
 
         // Save to MongoDB
         const newPayment = new Payment({
@@ -345,7 +348,10 @@ app.post('/api/notify-payment', async (req, res) => {
                 subject: `Payment Received: Important Days Subscription`,
                 text: `Dear ${userName},\n\nWe received your payment of Rs. ${amount}. Your UTR is ${txnId}.\nVerification is in progress.`
             };
-            await transporter.sendMail(customerMailOptions).catch(e => console.error("Customer Email Fail:", e));
+            await transporter.sendMail(customerMailOptions).catch(e => {
+                console.error("[ERR] Customer Payment Receipt Email Failed:", e.message);
+                console.error("[DEBUG] Full Error:", e);
+            });
         }
 
         res.json({ status: 'success', message: 'Payment recorded.' });
@@ -415,6 +421,9 @@ app.post('/api/notify-status', async (req, res) => {
                 to: email,
                 subject: `Subscription Update: ${statusText}`,
                 text: `Dear ${name},\n\n${msgText}\n\nThank you!`
+            }).catch(e => {
+                console.error("[ERR] Status Update Email Failed:", e.message);
+                console.error("[DEBUG] Full Error:", e);
             });
         }
         res.status(200).send("OK");
