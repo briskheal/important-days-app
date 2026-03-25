@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard – Important Days</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0b0e1a;
+            color: #e2e6f4;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        .page-wrap {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .top-bar h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .top-bar h1 span {
+            color: #7c6fff;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 9px 18px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-purple {
+            background: #7c6fff;
+            color: #fff;
+        }
+
+        .btn-purple:hover {
+            background: #5a4ee0;
+            transform: translateY(-1px);
+        }
+
+        .btn-red {
+            background: #f72585;
+            color: #fff;
+        }
+
+        .btn-red:hover {
+            background: #cc1f6f;
+            transform: translateY(-1px);
+        }
+
+        .btn-green {
+            background: #43d08a;
+            color: #0b0e1a;
+        }
+
+        .btn-green:hover {
+            background: #2db573;
+            transform: translateY(-1px);
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.06);
+            color: #9ca3af;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 18px 20px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7491;
+            font-weight: 700;
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-top: 4px;
+        }
+
+        .clr-yellow {
+            color: #fbbf24;
+        }
+
+        .clr-green {
+            color: #43d08a;
+        }
+
+        .clr-red {
+            color: #f87171;
+        }
+
+        .clr-purple {
+            color: #7c6fff;
+        }
+
+        .tab-row {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .tab {
+            padding: 9px 18px;
+            border-radius: 10px 10px 0 0;
+            border: none;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #6b7491;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tab.active {
+            background: rgba(124, 111, 255, 0.15);
+            color: #7c6fff;
+            border-bottom: 2px solid #7c6fff;
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+            color: #e2e6f4;
+        }
+
+        .payment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .payment-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .payment-card.status-approved {
+            border-left: 3px solid #43d08a;
+        }
+
+        .payment-card.status-rejected {
+            border-left: 3px solid #f87171;
+            opacity: 0.65;
+        }
+
+        .payment-card.status-pending {
+            border-left: 3px solid #fbbf24;
+        }
+
+        .pc-name {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .pc-phone {
+            font-size: 0.8rem;
+            color: #6b7491;
+            margin-top: 2px;
+        }
+
+        .pc-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 3px 12px;
+            border-radius: 100px;
+            font-size: 0.73rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .bdg-monthly {
+            background: rgba(124, 111, 255, 0.15);
+            color: #a78bfa;
+            border-color: rgba(124, 111, 255, 0.3);
+        }
+
+        .bdg-annual {
+            background: rgba(255, 166, 43, 0.15);
+            color: #fbbf24;
+            border-color: rgba(255, 166, 43, 0.3);
+        }
+
+        .bdg-pending {
+            background: rgba(251, 191, 36, 0.12);
+            color: #fbbf24;
+            border-color: rgba(251, 191, 36, 0.25);
+        }
+
+        .bdg-approved {
+            background: rgba(67, 208, 138, 0.12);
+            color: #43d08a;
+            border-color: rgba(67, 208, 138, 0.25);
+        }
+
+        .bdg-rejected {
+            background: rgba(248, 113, 113, 0.12);
+            color: #f87171;
+            border-color: rgba(248, 113, 113, 0.25);
+        }
+
+        .pc-utr-wrap {
+            margin-top: 10px;
+        }
+
+        .pc-utr-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7491;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .pc-utr {
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fbbf24;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 6px 14px;
+            border-radius: 8px;
+            display: inline-block;
+            border: 1px solid rgba(251, 191, 36, 0.25);
+            letter-spacing: 1px;
+        }
+
+        .pc-meta {
+            font-size: 0.72rem;
+            color: #4b5563;
+            margin-top: 5px;
+            line-height: 1.7;
+        }
+
+        .pc-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 90px;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 40px 20px;
+            color: #4b5563;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #1a1e36;
+            padding: 32px;
+            border-radius: 20px;
+            border: 1px solid rgba(124, 111, 255, 0.3);
+            width: 90%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #7c6fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .modal-input:focus {
+            border-color: #7c6fff;
+        }
+
+        .pwd-container {
+            position: relative;
+        }
+
+        .pwd-toggle {
+            position: absolute;
+            right: 12px;
+            top: 42%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #5a6080;
+            cursor: pointer;
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 11px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-m-cancel {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-m-ok {
+            background: #7c6fff;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-wrap">
+
+        <!-- Dashboard (shown after login) -->
+        <div id="dashboard" style="display:none;">
+            <div class="top-bar">
+                <h1>⚙️ Admin <span>Dashboard</span></h1>
+                <div class="top-actions">
+                    <button class="btn btn-purple" onclick="exportUsers()">⬇️ Export Users</button>
+                    <button class="btn btn-purple" onclick="exportPayments()"
+                        style="background:#4cc9f0;color:#0b0e1a;">⬇️ Export Payments</button>
+                    <button class="btn btn-red" onclick="confirmReset()">🧹 Reset DB</button>
+                    <button class="btn btn-red" onclick="adminLogout()"
+                        style="background:rgba(247,37,133,0.1);color:#f72585;border:1px solid rgba(247,37,133,0.3);">🚪
+                        Logout</button>
+                    <a href="index.html" class="btn btn-ghost">← App</a>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row" id="stats-row"></div>
+
+            <!-- Tabs -->
+            <div class="tab-row">
+                <button class="tab active" id="tab-pending" onclick="switchTab('pending')">⏳ Pending</button>
+                <button class="tab" id="tab-approved" onclick="switchTab('approved')">✅ Approved</button>
+                <button class="tab" id="tab-rejected" onclick="switchTab('rejected')">❌ Rejected</button>
+                <button class="tab" id="tab-all" onclick="switchTab('all')">📋 All Records</button>
+            </div>
+            <div class="payment-list" id="payment-list"></div>
+        </div>
+
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="adminModal" class="modal-overlay" style="display:flex;">
+        <div class="modal-content">
+            <h2>🔐 Admin Login</h2>
+            <div id="step1">
+                <input type="text" id="adminId" class="modal-input" placeholder="Admin ID" autocomplete="off">
+                <div class="modal-btns">
+                    <a href="index.html" class="modal-btn btn-m-cancel">← App</a>
+                    <button class="modal-btn btn-m-ok" onclick="checkId()">Next →</button>
+                </div>
+            </div>
+            <div id="step2" style="display:none;">
+                <div class="pwd-container">
+                    <input type="password" id="adminPwd" class="modal-input" placeholder="Password">
+                    <button type="button" class="pwd-toggle" onclick="togglePwd()">👁️</button>
+                </div>
+                <div class="modal-btns">
+                    <button class="modal-btn btn-m-cancel" onclick="goStep(1)">← Back</button>
+                    <button class="modal-btn btn-m-ok" onclick="doLogin()">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'pending';
+
+        function goStep(n) {
+            document.getElementById('step1').style.display = n === 1 ? 'block' : 'none';
+            document.getElementById('step2').style.display = n === 2 ? 'block' : 'none';
+        }
+        async function checkId() {
+            const id = document.getElementById('adminId').value.trim();
+            if (!id) return alert('Enter Admin ID');
+            // We just move to password step for simplicity, or we could verify ID
+            goStep(2); 
+            document.getElementById('adminPwd').focus();
+        }
+        function togglePwd() { const i = document.getElementById('adminPwd'); i.type = i.type === 'password' ? 'text' : 'password'; }
+        async function doLogin() {
+            const id = document.getElementById('adminId').value.trim();
+            const pwd = document.getElementById('adminPwd').value.trim();
+            
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, pwd })
+                });
+                
+                if (res.ok) {
+                    document.getElementById('adminModal').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                    localStorage.setItem('importantDays_admin_session', 'true');
+                    renderDashboard();
+                } else {
+                    const data = await res.json();
+                    alert(data.message || 'Invalid Credentials');
+                }
+            } catch (err) {
+                alert('Connection to server failed');
+            }
+        }
+
+        function adminLogout() {
+            localStorage.removeItem('importantDays_admin_session');
+            window.location.replace('landing.html');
+        }
+
+        // Auto login if session active
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('importantDays_admin_session') === 'true') {
+                document.getElementById('adminModal').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                renderDashboard();
+            }
+
+            // Delegated event listener for Approve/Reject buttons
+            document.getElementById('payment-list').addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+
+                const mobile = btn.getAttribute('data-mobile');
+                const txnId = btn.getAttribute('data-txnid');
+                const type = btn.getAttribute('data-type');
+
+                if (btn.classList.contains('btn-approve')) {
+                    approveSub(mobile, txnId, type);
+                } else if (btn.classList.contains('btn-reject')) {
+                    rejectSub(mobile, txnId, type);
+                }
+            });
+        });
+
+        // ── Data ─────────────────────────────────────────────
+        let cachedLedger = [];
+        let cachedUsers = [];
+
+        async function refreshData() {
+            try {
+                const [lRes, uRes] = await Promise.all([
+                    fetch('/api/admin/ledger'),
+                    fetch('/api/admin/users')
+                ]);
+                cachedLedger = await lRes.json();
+                cachedUsers = await uRes.json();
+                
+                // Keep local storage legacy sync for fallback UI if needed
+                localStorage.setItem('importantDays_paymentLedger', JSON.stringify(cachedLedger));
+                localStorage.setItem('importantDays_allUsers', JSON.stringify(cachedUsers));
+            } catch (err) {
+                console.error("Failed to sync with backend", err);
+                // Fallback to local
+                cachedLedger = JSON.parse(localStorage.getItem('importantDays_paymentLedger') || '[]');
+                cachedUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
+            }
+        }
+
+        // ── Render ────────────────────────────────────────────
+        async function renderDashboard() { 
+            await refreshData();
+            renderStats(); 
+            renderList(); 
+        }
+
+        function renderStats() {
+            const l = cachedLedger;
+            const p = l.filter(r => r.status === 'pending').length;
+            const a = l.filter(r => r.status === 'approved' || r.status === 'active').length;
+            const rj = l.filter(r => r.status === 'rejected').length;
+            const rev = l.filter(r => r.status === 'approved' || r.status === 'active').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+            document.getElementById('stats-row').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value clr-yellow">${p}</div></div>
+      <div class="stat-card"><div class="stat-label">Approved</div><div class="stat-value clr-green">${a}</div></div>
+      <div class="stat-card"><div class="stat-label">Rejected</div><div class="stat-value clr-red">${rj}</div></div>
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value clr-purple">${l.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Revenue ₹</div><div class="stat-value clr-green">₹${rev}</div></div>
+    `;
+            document.getElementById('tab-pending').textContent = `⏳ Pending (${p})`;
+        }
+
+        function switchTab(t) {
+            currentTab = t;
+            ['pending', 'approved', 'rejected', 'all'].forEach(x => document.getElementById('tab-' + x).classList.toggle('active', x === t));
+            renderList();
+        }
+
+        function renderList() {
+            const ledger = cachedLedger;
+            const items = currentTab === 'all' ? ledger : (
+                currentTab === 'approved' 
+                ? ledger.filter(r => r.status === 'approved' || r.status === 'active')
+                : ledger.filter(r => r.status === currentTab)
+            );
+            const box = document.getElementById('payment-list');
+            if (!items.length) { box.innerHTML = '<div class="empty-msg">No records in this category.</div>'; return; }
+
+            const sorted = [...items].sort((a, b) => new Date(b.paidAt || 0) - new Date(a.paidAt || 0));
+            box.innerHTML = sorted.map((req, listIdx) => {
+                const plan = req.type === 'monthly'
+                    ? `<span class="badge bdg-monthly">MONTHLY ₹${req.amount || 30}</span>`
+                    : `<span class="badge bdg-annual">ANNUAL ₹${req.amount || 300}</span>`;
+                const stat = req.status === 'approved' || req.status === 'active'
+                    ? `<span class="badge bdg-approved">APPROVED</span>`
+                    : (req.status === 'pending' 
+                        ? `<span class="badge bdg-pending">PENDING</span>` 
+                        : `<span class="badge bdg-rejected">REJECTED</span>`);
+
+                const acts = req.status === 'pending'
+                    ? `<button class="btn btn-green btn-approve" style="font-size:.78rem;padding:7px 12px;" 
+                        data-mobile="${req.mobile}" data-txnid="${req.txnId}" data-type="${req.type}">✅ Approve</button>
+                       <button class="btn btn-red btn-reject" style="font-size:.78rem;padding:7px 12px;" 
+                        data-mobile="${req.mobile}" data-txnid="${req.txnId}" data-type="${req.type}">❌ Reject</button>`
+                    : `<span style="font-size:.75rem;color:#6b7491;">${(req.status === 'approved' || req.status === 'active') ? '✅ Approved' : '❌ Rejected'}<br>${req.actionAt ? new Date(req.actionAt).toLocaleDateString('en-IN') : ''}</span>`;
+                return `
+        <div class="payment-card status-${req.status}">
+          <div>
+            <div class="pc-name">${req.userName || 'Unknown'}</div>
+            <div class="pc-phone">📱 ${req.mobile || '—'}</div>
+            <div class="pc-badges">${plan}${stat}</div>
+            <div class="pc-utr-wrap">
+              <div class="pc-utr-label">UTR / Reference Number</div>
+              <div class="pc-utr">${req.txnId || '—'}</div>
+            </div>
+            <div class="pc-meta">
+              📅 Submitted: ${req.paidAt ? new Date(req.paidAt).toLocaleString('en-IN') : '—'}<br>
+              📆 Plan valid till: ${req.expiry ? new Date(req.expiry).toLocaleDateString('en-IN') : '—'}
+            </div>
+          </div>
+          <div class="pc-actions">${acts}</div>
+        </div>`;
+            }).join('');
+        }
+
+        // ── Actions ───────────────────────────────────────────
+        async function approveSub(mobile, txnId, type) {
+            if (!confirm(`Approve payment for ${mobile} (${type.toUpperCase()})?`)) return;
+            
+            // New Expiry Calculation: Start from TODAY (Approval time)
+            const today = new Date();
+            const newExpiry = new Date();
+            if (type === 'annual') {
+                newExpiry.setFullYear(today.getFullYear() + 1);
+            } else {
+                newExpiry.setMonth(today.getMonth() + 1);
+            }
+            const expiryStr = newExpiry.toISOString();
+
+            try {
+                const res = await fetch('/api/admin/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mobile, txnId, status: 'approved', expiry: expiryStr, type
+                    })
+                });
+                
+                if (res.ok) {
+                    // Update local cache for immediate feedback
+                    const record = cachedLedger.find(p => p.mobile === mobile && p.txnId === txnId);
+                    if (record) {
+                        record.status = 'approved'; // Changed from 'active' to 'approved' to match existing statuses
+                        record.expiry = expiryStr;
+                        record.actionAt = new Date().toISOString();
+                    }
+                    renderDashboard();
+                    
+                    alert('Subscription approved successfully!');
+                    sendAdminEmail(mobile, 'APPROVED', `Congratulations! Your payment for ${type.toUpperCase()} subscription has been APPROVED. Your account is now active.`);
+                } else {
+                    alert("Failed to update status on server.");
+                }
+            } catch (err) {
+                alert("Error connecting to server.");
+            }
+        }
+
+        async function rejectSub(mobile, txnId, type) {
+            const reason = prompt("Enter reason for rejection:", "Non-receipt of payment / Invalid UTR");
+            if (reason === null) return; // Cancelled
+            
+            if (!confirm(`Reject this request? Reason: ${reason}`)) return;
+            try {
+                const res = await fetch('/api/admin/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mobile, txnId, status: 'rejected', type, reason
+                    })
+                });
+                
+                if (res.ok) {
+                    const emailMsg = `Your payment receipt for ${type.toUpperCase()} subscription was REJECTED.\n\nReason: ${reason}\n\nPlease contact Admin at 8878923337 for any clarification or to understand more.\n\nYou can subscribe again from the app with a valid payment.`;
+                    sendAdminEmail(mobile, 'PAYMENT REJECTED', emailMsg);
+                    renderDashboard();
+                } else {
+                    alert("Failed to update status on server.");
+                }
+            } catch (err) {
+                alert("Error connecting to server.");
+            }
+        }
+
+        // ── Admin Native Email Helper ─────────────────────────
+        function sendAdminEmail(phone, statusText, msgText) {
+            const norm = (s) => (s || '').replace(/\D/g, '');
+            const target = norm(phone);
+            const allUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
+            const u = allUsers.find(x => norm(x.phone) === target);
+            
+            if (u && u.email) {
+                fetch('/api/notify-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: u.email,
+                        name: u.name,
+                        statusText: statusText,
+                        msgText: msgText
+                    })
+                }).catch(err => console.error("Admin Email notification failed", err));
+            } else {
+                console.warn("Platform Email skipped. User never registered an email address.");
+            }
+        }
+
+        // ── Export / Reset ────────────────────────────────────
+        function exportUsers() {
+            if (!confirm('Download User Registration Data (CSV)?\n\nNote: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
+            const u = cachedUsers;
+            if (!u || !u.length) { alert('No users in cache. Refresh dash first.'); return; }
+            const h = ['Name', 'Phone', 'Email', 'Address', 'City', 'Pincode', 'State', 'Login ID', 'Password', 'Registered'];
+            const rows = u.map(x => [
+                `"${x.name || ''}"`, 
+                `"${x.phone || ''}"`, 
+                `"${x.email || ''}"`, 
+                `"${x.address || ''}"`, 
+                `"${x.city || ''}"`, 
+                `"${x.pincode || ''}"`, 
+                `"${x.state || ''}"`, 
+                `"${x.loginId || ''}"`,
+                `"${x.password || ''}"`,
+                `"${x.timestamp ? new Date(x.timestamp).toLocaleString() : ''}"`
+            ].join(','));
+            const date = new Date().toISOString().split('T')[0];
+            dl([h.join(','), ...rows].join('\n'), `ImportantDays_Users_${date}.csv`);
+        }
+
+        function exportPayments() {
+            if (!confirm('Download Payment Records (CSV)?\n\nNote: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
+            const l = cachedLedger; if (!l || !l.length) { alert('No payment records in cache. Refresh dash first.'); return; }
+            const allUsers = cachedUsers;
+            const h = ['Name', 'Phone', 'Login ID', 'Password', 'Plan', 'Amount(₹)', 'UTR', 'Status', 'Submitted', 'ActionDate', 'Expiry'];
+            const rows = l.map(r => {
+                const u = allUsers.find(ux => {
+                    const norm = (s) => (s || '').replace(/\D/g, '');
+                    return norm(ux.phone) === norm(r.mobile);
+                });
+                return [
+                    `"${r.userName || ''}"`, 
+                    `"${r.mobile || ''}"`, 
+                    `"${u ? u.loginId : ''}"`,
+                    `"${u ? u.password : ''}"`,
+                    `"${r.type || ''}"`, 
+                    `"${r.amount || ''}"`, 
+                    `"${r.txnId || ''}"`, 
+                    `"${r.status || ''}"`, 
+                    `"${r.paidAt ? new Date(r.paidAt).toLocaleString() : ''}"`, 
+                    `"${r.actionAt ? new Date(r.actionAt).toLocaleString() : ''}"`, 
+                    `"${r.expiry ? new Date(r.expiry).toLocaleDateString() : ''}"`
+                ].join(',');
+            });
+            const date = new Date().toISOString().split('T')[0];
+            dl([h.join(','), ...rows].join('\n'), `ImportantDays_Payments_${date}.csv`);
+        }
+
+        function dl(csv, name) {
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+            a.download = name; a.click();
+        }
+
+        async function confirmReset() {
+            if (!confirm('⚠️ WARNING: This will PERMANENTLY ERASE ALL users and payment records on the server and local storage! \n\nAre you sure you want to proceed?')) return;
+            if (!confirm('FINAL CONFIRMATION: Are you REALLY sure? This CANNOT be undone (y/n)?')) return;
+
+            const id = document.getElementById('adminId').value.trim();
+            const pwd = document.getElementById('adminPwd').value.trim();
+
+            try {
+                const res = await fetch('/api/admin/reset-db', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, pwd })
+                });
+                if (res.ok) {
+                    ['importantDays_user', 'importantDays_allUsers', 'importantDays_session_active', 'importantDays_registered',
+                        'importantDays_subscription', 'importantDays_approvedSubs', 'importantDays_paymentLedger', 'importantDays_subRequests',
+                        'importantDays_admin_token']
+                        .forEach(k => localStorage.removeItem(k));
+                    
+                    alert('Database and session cleared successfully.');
+                    window.location.replace('landing.html');
+                } else {
+                    alert('Failed to reset server database.');
+                }
+            } catch (err) {
+                console.error('Reset error:', err);
+                alert('Connection error. Reset failed.');
+            }
+        }
+    </script>
+</body>
+
+</html>

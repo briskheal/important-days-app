@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Reset – Important Days</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #030712;
+            --card: #0f172a;
+            --accent-red: #f43f5e;
+            --accent-purple: #6366f1;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+            font-family: inherit;
+        }
+
+        .btn-reset {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-reset:hover {
+            filter: brightness(1.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .spinning {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>🧹 Reset Database</h1>
+        <p>This action will permanently delete all users and payment records from the server and clear your local session. This cannot be undone.</p>
+        
+        <button id="reset-btn" class="btn btn-reset" onclick="handleReset()">Erase All Data</button>
+        <button id="cancel-btn" class="btn btn-cancel" onclick="window.location.href='landing.html'">Cancel</button>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        async function handleReset() {
+            if (!confirm("Are you absolutely sure? This will delete EVERYTHING.")) return;
+            
+            const btn = document.getElementById('reset-btn');
+            const status = document.getElementById('status');
+            
+            btn.disabled = true;
+            btn.textContent = "Processing...";
+            status.innerHTML = '<span class="spinning">⏳</span> Connecting to server...';
+
+            try {
+                const res = await fetch('/api/admin/reset-db', { method: 'POST' });
+                
+                if (res.ok) {
+                    status.style.color = "#10b981";
+                    status.innerHTML = "✅ Database Cleared Successfuly!";
+                    
+                    // Clear all local storage keys used by the app
+                    const keys = [
+                        'importantDays_user', 
+                        'importantDays_allUsers', 
+                        'importantDays_session_active', 
+                        'importantDays_registered',
+                        'importantDays_subscription', 
+                        'importantDays_approvedSubs', 
+                        'importantDays_paymentLedger', 
+                        'importantDays_subRequests',
+                        'importantDays_admin_token',
+                        'importantDays_admin_session'
+                    ];
+                    keys.forEach(k => localStorage.removeItem(k));
+                    
+                    setTimeout(() => {
+                        window.location.replace("landing.html");
+                    }, 2000);
+                } else {
+                    throw new Error("Reset failed on server");
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = "Erase All Data";
+                status.style.color = "#f43f5e";
+                status.innerHTML = "❌ Error: " + err.message;
+            }
+        }
+    </script>
+</body>
+
+</html>

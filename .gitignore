@@ -1,0 +1,19 @@
+node_modules/
+.env
+
+# Data Files
+users.json
+payments.json
+admin.json
+
+# Logs
+server.log
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp files
+temp_node/
+node.zip

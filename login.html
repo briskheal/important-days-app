@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login – Important Days Calendar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-base: #030712;
+            --bg-obsidian: #0f172a;
+            --accent-main: #6366f1;
+            --accent-alt: #8b5cf6;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+            --glass: rgba(15, 23, 42, 0.6);
+            --radius-xl: 24px;
+            --radius-lg: 16px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* ── Modern Background ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.1) 0%, transparent 40%);
+            z-index: -1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+            z-index: 1;
+        }
+
+        .auth-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 10px;
+            color: white;
+            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .auth-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            line-height: 1.5;
+        }
+
+        /* ── Forms ── */
+        .form-group {
+            margin-bottom: 8px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .auth-input, .auth-select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 8px 12px;
+            color: white;
+            font-family: inherit;
+            font-size: 0.9375rem;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .auth-input:focus, .auth-select:focus {
+            border-color: var(--accent-main);
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        @media (max-width: 480px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+        }
+
+        .auth-select {
+            width: 110px;
+            flex-shrink: 0;
+            cursor: pointer;
+            padding-right: 30px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        /* ── Buttons ── */
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-main), var(--accent-alt));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+            filter: brightness(1.1);
+        }
+
+        .btn-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .btn-link:hover {
+            color: white;
+        }
+
+        .auth-footer {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .footer-link {
+            color: var(--accent-main);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* Steps */
+        .auth-step {
+            display: none;
+        }
+
+        .auth-step.active {
+            display: block;
+        }
+
+        /* Credentials Box */
+        .creds-box {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .creds-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-main);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+        }
+
+        .creds-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .creds-value:last-child {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 32px 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="auth-card">
+            <div class="brand-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            </div>
+
+            <div class="auth-header">
+                <h1 class="auth-title" id="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle" id="auth-subtitle">Enter your details to access the calendar.</p>
+            </div>
+
+            <!-- STEP 1: Registration Form -->
+            <div id="step-register" class="auth-step active">
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <div class="input-row">
+                            <select id="login-ccode" class="auth-select">
+                                <option value="+91" selected>🇮🇳 +91</option>
+                                <option value="+1">🇺🇸 +1</option>
+                                <option value="+44">🇬🇧 +44</option>
+                                <option value="+971">🇦🇪 +971</option>
+                            </select>
+                            <input type="tel" id="login-phone" class="auth-input" placeholder="98765 43210" required oninput="checkPhoneInput()" />
+                        </div>
+                    </div>
+
+                    <div id="extra-fields" style="display: none;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" id="login-name" class="auth-input" placeholder="e.g. Ramesh" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" id="login-email" class="auth-input" placeholder="you@mail.com" required />
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Pincode (Optional)</label>
+                                <input type="text" id="login-pincode" class="auth-input" placeholder="110001" maxlength="6" />
+                                <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Used for regional event filtering</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Address (Optional)</label>
+                                <input type="text" id="login-address" class="auth-input" placeholder="House / Area" />
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">State</label>
+                            <input type="text" id="login-state" class="auth-input" placeholder="Auto-filled" readonly style="opacity: 0.6; cursor: not-allowed;" />
+                        </div>
+                        <div class="form-group" style="display:none;">
+                            <input type="text" id="login-city" class="auth-input" />
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Continue</button>
+                    <a href="landing.html" class="btn-link">← Back to Home</a>
+                </form>
+                <div class="auth-footer" style="margin-top: 24px; padding-top: 16px;">
+                    <p class="auth-subtitle">Already have an account? <a href="#" onclick="showStep('step-login')" class="footer-link">Sign In</a></p>
+                </div>
+            </div>
+
+            <!-- STEP 2: Credentials Display -->
+            <div id="step-credentials" class="auth-step">
+                <div class="creds-box">
+                    <div class="creds-label">Login ID</div>
+                    <div id="display-login-id" class="creds-value">USR-XXXX</div>
+                    <div class="creds-label">Password</div>
+                    <div id="display-login-pwd" class="creds-value">XXXXXX</div>
+                </div>
+
+                <a href="#" id="wa-share-btn" target="_blank" class="btn-primary" style="background: #128c7e; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    Share via WhatsApp
+                </a>
+
+                <button type="button" class="btn-primary" onclick="proceedToLogin()" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border);">
+                    Proceed to Login
+                </button>
+            </div>
+
+            <!-- STEP 3: Actual Login Form -->
+            <div id="step-login" class="auth-step">
+                <form onsubmit="handleActualLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">Login ID</label>
+                        <input type="text" id="auth-id" class="auth-input" placeholder="e.g. USR-ABCD" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div style="position: relative;">
+                            <input type="password" id="auth-pwd" class="auth-input" placeholder="••••••" required />
+                            <button type="button" onclick="togglePassword('auth-pwd', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer;">👁️</button>
+                        </div>
+                    </div>
+                    <div style="text-align: right; margin-bottom: 24px;">
+                        <a href="#" onclick="showStep('step-forgot')" class="footer-link" style="font-size: 0.8125rem;">Forgot password?</a>
+                    </div>
+                    <div id="login-proceed-hint" style="display:none; background: rgba(99,241,130,0.12); border: 1px solid rgba(99,241,130,0.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; text-align: center; font-size: 0.875rem; color: #6ef18a;">
+                        ✅ Credentials filled! Press <strong>Enter</strong> to Proceed.
+                    </div>
+                    <button type="submit" class="btn-primary">Sign In →</button>
+                </form>
+                <div class="auth-footer">
+                    <p class="auth-subtitle">New here? <a href="#" onclick="showStep('step-register')" class="footer-link">Create account</a></p>
+                </div>
+            </div>
+
+            <!-- STEP 4: Forgot Credentials -->
+            <div id="step-forgot" class="auth-step">
+                <form onsubmit="handleForgot(event)">
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <div class="input-row">
+                            <select id="forgot-ccode" class="auth-select">
+                                <option value="+91" selected>🇮🇳 +91</option>
+                                <option value="+1">🇺🇸 +1</option>
+                            </select>
+                            <input type="tel" id="forgot-phone" class="auth-input" placeholder="98765 43210" required />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Recover Account</button>
+                </form>
+
+                <div id="forgot-result" style="display: none; margin-top: 32px;">
+                    <div class="creds-box">
+                        <div class="creds-label">Your Login ID</div>
+                        <div id="recovered-id" class="creds-value">USR-XXXX</div>
+                    </div>
+                    <form onsubmit="handleResetPassword(event)">
+                        <div class="form-group">
+                            <label class="form-label">New Password</label>
+                            <input type="password" id="new-pwd" class="auth-input" placeholder="Enter new password" required />
+                        </div>
+                        <button type="submit" class="btn-primary">Update Password</button>
+                    </form>
+                </div>
+
+                <div class="auth-footer" style="margin-top: 32px; padding-top: 20px;">
+                    <a href="#" onclick="showStep('step-login')" class="footer-link">← Back to Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set initial step
+        function showStep(stepId) {
+            // Remove active class from all steps
+            document.querySelectorAll('.auth-step').forEach(step => {
+                step.classList.remove('active');
+            });
+
+            // Show current step
+            const currentStep = document.getElementById(stepId);
+            if (currentStep) currentStep.classList.add('active');
+
+            const titleEl = document.getElementById('auth-title');
+            const subTextEl = document.getElementById('auth-subtitle');
+
+            if (stepId === 'step-register') {
+                titleEl.textContent = 'Create Account';
+                subTextEl.textContent = 'Enter your details to get started.';
+            } else if (stepId === 'step-credentials') {
+                titleEl.textContent = 'Account Created';
+                subTextEl.textContent = 'Save these credentials and share via WhatsApp.';
+            } else if (stepId === 'step-login') {
+                titleEl.textContent = 'Welcome Back';
+                subTextEl.textContent = 'Sign in to access your calendar.';
+            } else if (stepId === 'step-forgot') {
+                titleEl.textContent = 'Recover Account';
+                subTextEl.textContent = 'Enter your phone to reset password.';
+            }
+        }
+
+        // On Load Logic
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('importantDays_allUsers')) {
+                localStorage.setItem('importantDays_allUsers', JSON.stringify([]));
+            }
+
+            if (localStorage.getItem('importantDays_user') && localStorage.getItem('importantDays_session_active') === 'true') {
+                window.location.href = 'index.html';
+            } else if (localStorage.getItem('importantDays_user') && localStorage.getItem('importantDays_session_active') !== 'true') {
+                showStep('step-login');
+            } else {
+                showStep('step-register');
+            }
+        });
+
+        // Pincode to State Auto-Fill Logic
+        const pincodeInput = document.getElementById('login-pincode');
+        const stateInput = document.getElementById('login-state');
+
+        if (pincodeInput) {
+            pincodeInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                const val = e.target.value;
+
+                if (val.length === 6) {
+                    const prefix = parseInt(val.substring(0, 2), 10);
+                    let stateName = null;
+                    if (prefix === 11) stateName = "Delhi";
+                    else if (prefix >= 12 && prefix <= 13) stateName = "Haryana";
+                    else if (prefix >= 14 && prefix <= 15) stateName = "Punjab";
+                    else if (prefix === 16) stateName = "Chandigarh";
+                    else if (prefix === 17) stateName = "Himachal Pradesh";
+                    else if (prefix >= 18 && prefix <= 19) stateName = "Jammu & Kashmir";
+                    else if (prefix >= 20 && prefix <= 28) stateName = "Uttar Pradesh";
+                    else if (prefix >= 30 && prefix <= 34) stateName = "Rajasthan";
+                    else if (prefix >= 36 && prefix <= 39) stateName = "Gujarat";
+                    else if (prefix >= 40 && prefix <= 44) stateName = "Maharashtra";
+                    else if (prefix >= 45 && prefix <= 48) stateName = "Madhya Pradesh";
+                    else if (prefix === 49) stateName = "Chhattisgarh";
+                    else if (prefix >= 50 && prefix <= 53) stateName = "Andhra Pradesh / Telangana";
+                    else if (prefix >= 56 && prefix <= 59) stateName = "Karnataka";
+                    else if (prefix >= 60 && prefix <= 64) stateName = "Tamil Nadu";
+                    else if (prefix >= 67 && prefix <= 69) stateName = "Kerala";
+                    else if (prefix >= 70 && prefix <= 74) stateName = "West Bengal";
+                    else if (prefix >= 75 && prefix <= 77) stateName = "Odisha";
+                    else if (prefix === 78) stateName = "Assam";
+                    else if (prefix === 79) stateName = "North East";
+                    else if (prefix >= 80 && prefix <= 85) stateName = "Bihar / Jharkhand";
+
+                    if (stateName) stateInput.value = stateName;
+                }
+            });
+        }
+
+        function checkPhoneInput() {
+            const phoneVal = document.getElementById('login-phone').value.trim();
+            if (phoneVal.length >= 10) {
+                checkExistingPhone();
+            } else {
+                document.getElementById('extra-fields').style.display = 'none';
+            }
+        }
+
+        async function checkExistingPhone() {
+            const phoneVal = document.getElementById('login-phone').value.trim();
+            if (!phoneVal) return;
+            const ccodeVal = document.getElementById('login-ccode').value.trim();
+            const fullPhoneRaw = ccodeVal + ' ' + phoneVal;
+
+            const norm = (str) => str.replace(/\D/g, '');
+            const normPhone = norm(fullPhoneRaw);
+
+            const allUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
+            const localUser = allUsers.find(u => norm(u.phone) === normPhone);
+
+            if (localUser) {
+                alert(`Welcome back ${localUser.name}! This number is already registered.\n\nPlease sign in.`);
+                showStep('step-login');
+                document.getElementById('auth-id').value = localUser.loginId;
+                return;
+            }
+
+            // Server-side check fallback
+            try {
+                const res = await fetch('/api/check-phone', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: fullPhoneRaw })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.exists) {
+                        alert(`Welcome back ${data.name}! Your account is already registered.\n\nPlease sign in with your ID.`);
+                        showStep('step-login');
+                        document.getElementById('auth-id').value = data.loginId;
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn("Server check failed", err);
+            }
+
+            // If not found anywhere, show extra fields for registration
+            document.getElementById('extra-fields').style.display = 'block';
+            document.getElementById('login-name').required = true;
+            document.getElementById('login-email').required = true;
+        }
+
+        // Store last generated creds globally for auto-fill
+        let _lastCreds = null;
+
+        function generateCreds() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let id = 'USR-';
+            for (let i = 0; i < 4; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
+            let pwd = '';
+            for (let i = 0; i < 6; i++) pwd += Math.floor(Math.random() * 10);
+            return { id, pwd };
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById('login-name').value.trim();
+            const ccode = document.getElementById('login-ccode').value.trim();
+            const phone = document.getElementById('login-phone').value.trim();
+            const email = document.getElementById('login-email').value.trim();
+            const address = document.getElementById('login-address').value.trim();
+            const pincode = document.getElementById('login-pincode').value.trim();
+            const state = document.getElementById('login-state').value.trim();
+            const fullPhone = ccode + ' ' + phone;
+
+            const creds = generateCreds();
+            const newUser = {
+                loginId: creds.id,
+                password: creds.pwd,
+                name, phone: fullPhone, email, address, pincode, state,
+                createdAt: new Date().toISOString()
+            };
+
+            // Sync to Local
+            const allUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
+            allUsers.push(newUser);
+            localStorage.setItem('importantDays_allUsers', JSON.stringify(allUsers));
+            localStorage.setItem('importantDays_user', JSON.stringify(newUser));
+
+            // Sync to Server
+            try {
+                await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newUser)
+                });
+            } catch (err) {
+                console.warn("Backend sync failed, using local storage fallback", err);
+            }
+
+            _lastCreds = creds;
+            const waPhone = (ccode + phone).replace(/\D/g, '');
+            const waText = encodeURIComponent(`Hello ${name},\n\nYour Calendar credentials:\n*ID:* ${creds.id}\n*PWD:* ${creds.pwd}`);
+            document.getElementById('wa-share-btn').href = `https://wa.me/${waPhone}?text=${waText}`;
+            document.getElementById('display-login-id').textContent = creds.id;
+            document.getElementById('display-login-pwd').textContent = creds.pwd;
+
+            showStep('step-credentials');
+        }
+
+        function proceedToLogin() {
+            showStep('step-login');
+            if (_lastCreds) {
+                document.getElementById('auth-id').value = _lastCreds.id;
+                document.getElementById('auth-pwd').value = _lastCreds.pwd;
+                // Show hint message
+                const hint = document.getElementById('login-proceed-hint');
+                if (hint) {
+                    hint.style.display = 'block';
+                    setTimeout(() => hint.style.display = 'none', 5000);
+                }
+            }
+        }
+
+        async function handleActualLogin(e) {
+            e.preventDefault();
+            const idInput = document.getElementById('auth-id').value.trim();
+            const pwdInput = document.getElementById('auth-pwd').value.trim();
+            const allUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
+            
+            // 1. Local Check
+            const localUser = allUsers.find(u => u.loginId === idInput && u.password === pwdInput);
+            if (localUser) {
+                localStorage.setItem('importantDays_user', JSON.stringify(localUser));
+                localStorage.setItem('importantDays_session_active', 'true');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // 2. Server Fallback (Vital for recovery or multi-device)
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ loginId: idInput, password: pwdInput })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const serverUser = data.user;
+                    
+                    // Sync to Local
+                    allUsers.push(serverUser);
+                    localStorage.setItem('importantDays_allUsers', JSON.stringify(allUsers));
+                    localStorage.setItem('importantDays_user', JSON.stringify(serverUser));
+                    localStorage.setItem('importantDays_session_active', 'true');
+                    window.location.href = 'index.html';
+                } else {
+                    alert("Invalid ID or Password.");
+                }
+            } catch (err) {
+                console.error("Login sync error", err);
+                alert("Login failed. Please check your connection.");
+            }
+        }
+
+        async function handleForgot(e) {
+            e.preventDefault();
+            const phone = document.getElementById('forgot-phone').value.trim();
+            const ccode = document.getElementById('forgot-ccode').value.trim();
+            // Robust normalization: send both raw and ccode to let server handle it
+            const fullPhone = ccode + ' ' + phone; 
+
+            try {
+                const res = await fetch('/api/recover-account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: fullPhone })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('recovered-id').textContent = data.loginId;
+                    document.getElementById('forgot-result').style.display = 'block';
+                    window._resetPhone = fullPhone;
+                } else if (res.status === 503) {
+                    const data = await res.json();
+                    alert(`⚠️ ${data.message || 'Database connection failed.'}`);
+                } else {
+                    alert("Account not found on server.");
+                }
+            } catch (err) {
+                alert("Connection error. Please try again.");
+            }
+        }
+
+        async function handleResetPassword(e) {
+            e.preventDefault();
+            const newPwd = document.getElementById('new-pwd').value.trim();
+            if (!newPwd) return alert("Enter new password");
+
+            try {
+                const res = await fetch('/api/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: window._resetPhone, newPassword: newPwd })
+                });
+
+                if (res.ok) {
+                    alert("Password updated on server!");
+                    showStep('step-login');
+                    // Sync local as well
+                    const allUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
+                    const idx = allUsers.findIndex(u => u.phone === window._resetPhone);
+                    if (idx !== -1) {
+                        allUsers[idx].password = newPwd;
+                        localStorage.setItem('importantDays_allUsers', JSON.stringify(allUsers));
+                    }
+                } else if (res.status === 503) {
+                    const data = await res.json();
+                    alert(`⚠️ ${data.message || 'Database connection failed.'}`);
+                } else {
+                    alert("Failed to reset password.");
+                }
+            } catch (err) {
+                alert("Connection error. Please try again.");
+            }
+        }
+
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            input.type = input.type === 'password' ? 'text' : 'password';
+            btn.textContent = input.type === 'password' ? '👁️' : '🔒';
+        }
+    </script>
+</body>
+
+</html>

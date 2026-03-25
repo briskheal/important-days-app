@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Customer Data</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background: #0d0f1e;
+            color: #e2e6f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .export-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, #7c6fff, #f72585);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .instruction {
+            opacity: 0.8;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: #7c6fff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #6a5eff;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Admin Login Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #1a1e36;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(124, 111, 255, 0.3);
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #7c6fff;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .modal-input:focus {
+            border-color: #7c6fff;
+        }
+
+        /* Password Toggle Styles */
+        .pwd-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .pwd-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #5a6080;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            z-index: 10;
+            margin-top: -7px;
+            /* Offset for modal-input margin-bottom */
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .btn-confirm {
+            background: #7c6fff;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="export-card">
+        <h1>Customer Data Export</h1>
+        <p class="instruction">Download the complete customer database in CSV format for offline viewing and management.
+        </p>
+
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="exportCSV()">⬇️ Download Customers (CSV)</button>
+            <button class="btn btn-secondary" onclick="window.location.href='index.html'">← Back to App</button>
+        </div>
+
+        <div id="status" style="margin-top: 20px; font-size: 0.9rem; opacity: 0.7;"></div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="adminModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Admin Authorization</h2>
+            <div id="login-step-1">
+                <input type="text" id="adminId" class="modal-input" placeholder="Enter Admin ID">
+                <div class="modal-btns">
+                    <button class="modal-btn btn-cancel" onclick="closeModal()">Back</button>
+                    <button class="modal-btn btn-confirm" onclick="checkAdminId()">Next</button>
+                </div>
+            </div>
+            <div id="login-step-2" style="display: none;">
+                <div class="pwd-container">
+                    <input type="password" id="adminPwd" class="modal-input" placeholder="Enter Password">
+                    <button type="button" class="pwd-toggle" onclick="togglePassword('adminPwd', this)">👁️</button>
+                </div>
+                <div class="modal-btns">
+                    <button class="modal-btn btn-cancel" onclick="closeModal()">Cancel</button>
+                    <button class="modal-btn btn-confirm" onclick="verifyAdmin()">Login & Download</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_CREDENTIALS = {
+            id: 'JRDASH',
+            pwd: '130670'
+        };
+
+        function exportCSV() {
+            document.getElementById('adminModal').style.display = 'flex';
+            document.getElementById('adminId').value = '';
+            document.getElementById('adminPwd').value = '';
+            document.getElementById('login-step-1').style.display = 'block';
+            document.getElementById('login-step-2').style.display = 'none';
+            document.getElementById('adminId').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('adminModal').style.display = 'none';
+        }
+
+        function checkAdminId() {
+            const id = document.getElementById('adminId').value.trim();
+            if (id === ADMIN_CREDENTIALS.id) {
+                document.getElementById('login-step-1').style.display = 'none';
+                document.getElementById('login-step-2').style.display = 'block';
+                document.getElementById('adminPwd').focus();
+            } else {
+                alert('Invalid Admin ID');
+            }
+        }
+
+        function verifyAdmin() {
+            const pwd = document.getElementById('adminPwd').value.trim();
+            if (pwd === ADMIN_CREDENTIALS.pwd) {
+                closeModal();
+                processExport();
+            } else {
+                alert('Invalid Password');
+            }
+        }
+
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🔒';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
+        function processExport() {
+            // Get all simulated users
+            const allUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
+            const currentUser = JSON.parse(localStorage.getItem('importantDays_user') || 'null');
+
+            // Merge current user if they aren't in allUsers
+            let dataToExport = [...allUsers];
+            if (currentUser && !dataToExport.some(u => u.phone === currentUser.phone)) {
+                dataToExport.push(currentUser);
+            }
+
+            if (dataToExport.length === 0) {
+                document.getElementById('status').textContent = 'No customer records found.';
+                return;
+            }
+
+            const headers = ['Name', 'Phone', 'Login ID', 'Password', 'Email', 'Address', 'Pincode', 'Registration Date'];
+            const rows = dataToExport.map(u => [
+                `"${u.name || ''}"`,
+                `"${u.phone || ''}"`,
+                `"${u.loginCode || u.loginId || ''}"`,
+                `"${u.password || ''}"`,
+                `"${u.email || ''}"`,
+                `"${u.address || ''}"`,
+                `"${u.pincode || ''}"`,
+                `"${u.createdAt || u.timestamp || ''}"`
+            ].join(','));
+
+            const csvContent = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'important_days_customers_' + new Date().toISOString().split('T')[0] + '.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            document.getElementById('status').textContent = `Success! Exported ${dataToExport.length} records.`;
+        }
+    </script>
+</body>
+
+</html>

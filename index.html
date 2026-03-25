@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Important Days – Daily Global & India Celebrations</title>
+  <meta name="description"
+    content="Discover important days, festivals and celebrations — India festivals, International days, Health, Environment and more." />
+  <link rel="stylesheet" href="style.css?v=2" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <meta name="theme-color" content="#030712" />
+</head>
+
+<body>
+
+  <!-- ── HEADER ── -->
+  <header>
+    <div class="container header-inner">
+      <a class="logo" href="#">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </div>
+        <div class="logo-text">
+          <h1>Important Days</h1>
+          <p>Global & India Celebrations</p>
+        </div>
+      </a>
+      
+      <div class="header-actions">
+        <div id="live-clock" aria-live="polite">--:--</div>
+        <button id="fixed-profile-btn" class="btn-header" onclick="openProfileModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          Profile
+        </button>
+        <button id="fixed-subscribe-btn" class="btn-header" onclick="showSubscriptionModal(false)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          Subscribe
+        </button>
+        <a id="fixed-admin-btn" href="admin.html" class="btn-header" style="display: none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Admin
+        </a>
+        <button id="logout-btn" class="btn-header btn-header-primary" onclick="handleLogout()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main>
+
+    <!-- ── HERO / TODAY ── -->
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="container">
+        <div class="hero-date-label" id="hero-date-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span id="today-full-date">Loading…</span>
+        </div>
+
+        <div style="margin-top: 10px; margin-bottom: 24px;">
+          <div id="welcome-banner" class="welcome-badge" style="display: none;"></div>
+          <div id="sub-status-badge" class="welcome-badge" style="display: none; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: var(--accent-success);"></div>
+        </div>
+
+        <div id="onboarding-teaser" style="display: none; max-width: 600px; margin: 0 auto 32px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; text-align: left;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px;">
+            <div style="display: flex; gap: 10px;">
+              <span style="font-size: 1.2rem;">📅</span>
+              <div style="font-size: 0.8rem; line-height: 1.4;"><strong style="color: var(--accent-main);">Dynamic Calendar</strong><br><span style="color: var(--text-secondary);">Click any date to see what the world celebrates.</span></div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <span style="font-size: 1.2rem;">🤖</span>
+              <div style="font-size: 0.8rem; line-height: 1.4;"><strong style="color: var(--accent-alt);">AI Content</strong><br><span style="color: var(--text-secondary);">Get personalized awareness posts for social media.</span></div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <span style="font-size: 1.2rem;">🎁</span>
+              <div style="font-size: 0.8rem; line-height: 1.4;"><strong style="color: #4cc9f0;">10-Day Trial</strong><br><span style="color: var(--text-secondary);">Full access included. Upgrade from your profile.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <h2 id="hero-heading">Today's Special Days</h2>
+        <p class="hero-sub">Celebrating what matters — every single day of the year</p>
+        <div class="today-grid" id="today-badges" aria-label="Today's important days" role="list">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SEARCH ── -->
+    <section class="search-section" aria-label="Search important days">
+      <div class="container">
+        <div class="search-wrapper">
+          <span class="search-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </span>
+          <input type="search" id="search-input" placeholder="Search by name, keyword or description…"
+            aria-label="Search important days" autocomplete="off" spellcheck="false" />
+          <button class="clear-btn" id="clear-btn" title="Clear search" aria-label="Clear search">✕</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FILTERS ── -->
+    <section class="filter-section" aria-label="Filter by category">
+      <div class="container">
+        <div class="filter-row">
+          <span class="filter-label">Category</span>
+          <div class="chips-wrap" id="category-chips" role="group" aria-label="Category filters">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MONTHLY CALENDAR ── -->
+    <section class="calendar-section" aria-labelledby="calendar-title" id="calendar-section">
+      <div class="container">
+        <div class="calendar-header">
+          <h2 class="section-title" id="calendar-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            Monthly Activity Calendar
+          </h2>
+          <div class="cal-nav">
+            <button id="cal-prev-btn" aria-label="Previous month">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <span id="cal-month-label" class="cal-month-label">Month Year</span>
+            <button id="cal-next-btn" aria-label="Next month">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+          </div>
+        </div>
+        <!-- Day-of-week headers -->
+        <div class="cal-dow-row" role="row">
+          <div>Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+        </div>
+        <!-- Calendar grid filled by JS -->
+        <div id="cal-grid" role="grid" aria-label="Monthly activity calendar"></div>
+
+        <!-- Day detail panel (shows when user clicks a date) -->
+        <div id="day-detail-panel" class="day-detail-panel" aria-live="polite" aria-label="Day activity details"></div>
+      </div>
+    </section>
+
+    <div class="section-divider container" role="separator"></div>
+
+    <!-- ── UPCOMING 7 DAYS ── -->
+    <section class="upcoming-section" aria-labelledby="upcoming-title">
+      <div class="container">
+        <h2 class="section-title" id="upcoming-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Coming Up Next (7 Days)
+        </h2>
+        <div id="upcoming-list" role="list" aria-label="Upcoming important days">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <div class="container">
+      <div id="footer-sub-cta" class="footer-cta" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        SUBSCRIBE FOR UNLIMITED CONTENT ACCESS
+      </div>
+      <p>🌍 Important Days — Celebrating global awareness every day &nbsp;|&nbsp; Data includes UN, WHO, UNESCO &amp; India National days</p>
+      <div style="margin-top: 20px; display: flex; justify-content: center; gap: 24px; font-size: 0.75rem; opacity: 0.8; position: relative; z-index: 10;">
+        <a href="privacy.html" style="color: var(--text-secondary); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 5px 0;">Privacy Policy</a>
+        <a href="terms.html" style="color: var(--text-secondary); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 5px 0;">Terms of Service</a>
+        <a href="refund.html" style="color: var(--text-secondary); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 5px 0;">Refund & Cancellation</a>
+      </div>
+      <p style="margin-top:12px;font-size:0.75rem;opacity:0.5;">Last updated: 2026 &nbsp;·&nbsp; Built with ❤️ for awareness</p>
+    </div>
+  </footer>
+
+  <!-- ── Subscription Modal ── -->
+  <div id="fixed-sub-modal" class="cm-overlay" role="dialog" aria-modal="true" aria-labelledby="sub-title" hidden>
+    <div class="cm-box sub-box">
+      <div class="cm-header">
+        <div class="cm-title-wrap">
+          <span class="cm-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          </span>
+          <h3 class="cm-title" id="sub-title">Choose Your Plan</h3>
+        </div>
+        <button class="cm-close-btn" id="sub-close-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="cm-body">
+        <div class="sub-intro">
+          <p id="sub-message">Unlock the full power of Important Days Calendar. Pick a plan that works for you.</p>
+        </div>
+
+        <div class="sub-plans-grid">
+          <!-- Trial -->
+          <div class="sub-plan-card">
+            <div class="sub-plan-badge">Current</div>
+            <div class="sub-plan-icon">🎁</div>
+            <div class="sub-plan-name">Trial</div>
+            <div class="sub-plan-price">₹0<span>/10 days</span></div>
+            <ul class="sub-plan-features">
+              <li>All Global Days</li>
+              <li>India Festivals</li>
+              <li>Limited Previews</li>
+            </ul>
+            <button class="sub-plan-btn sub-plan-btn--free" onclick="document.getElementById('fixed-sub-modal').hidden=true;">Start Trial</button>
+          </div>
+
+          <!-- Monthly -->
+          <div class="sub-plan-card">
+            <div class="sub-plan-badge sub-plan-badge--popular">Popular</div>
+            <div class="sub-plan-icon">🚀</div>
+            <div class="sub-plan-name">Monthly</div>
+            <div class="sub-plan-price">₹30<span>/month</span></div>
+            <ul class="sub-plan-features">
+              <li>Priority Support</li>
+              <li>Premium UI</li>
+              <li>Unlimited Content</li>
+              <li>Export Features</li>
+            </ul>
+            <button class="sub-plan-btn sub-plan-btn--monthly" onclick="initiatePayment(30, 'monthly')">Get Unlimited</button>
+          </div>
+
+          <!-- Annual -->
+          <div class="sub-plan-card sub-plan-card--featured">
+            <div class="sub-plan-badge sub-plan-badge--best">Best Value</div>
+            <div class="sub-plan-icon">👑</div>
+            <div class="sub-plan-name">Annual</div>
+            <div class="sub-plan-price">₹288<span>/year</span></div>
+            <ul class="sub-plan-features">
+              <li>All Month Features</li>
+              <li>Save 20% overall</li>
+              <li>24/7 Support</li>
+            </ul>
+            <button class="sub-plan-btn sub-plan-btn--annual" onclick="initiatePayment(288, 'annual')">Go Premium</button>
+          </div>
+        </div>
+
+        <!-- ── UPI Payment Gateway ── -->
+        <div id="upi-section" style="display:none; margin-top: 16px;">
+          <div class="pay-gateway">
+
+            <!-- Header -->
+            <div class="pay-header">
+              <button class="pay-back-btn" onclick="closePayGateway()">← Back</button>
+              <div class="pay-title-wrap">
+                <span class="pay-icon">💳</span>
+                <div>
+                  <div class="pay-title">Pay via UPI</div>
+                  <div class="pay-subtitle" id="pay-plan-label">Monthly – ₹30</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- QR + Instructions side by side -->
+            <div class="pay-qr-row">
+              <div class="pay-qr-box">
+                <img id="upi-qr-img" src="" alt="UPI QR Code" />
+                <div class="pay-qr-label">📷 Scan with any UPI app</div>
+              </div>
+              <div class="pay-right">
+                <div class="pay-apps-label">How to Pay</div>
+                <div class="pay-steps">
+                  <div class="pay-step">1️⃣ Open PhonePe / GPay / Paytm</div>
+                  <div class="pay-step">2️⃣ Scan the QR code</div>
+                  <div class="pay-step">3️⃣ Enter the exact amount</div>
+                  <div class="pay-step">4️⃣ Pay &amp; note your <strong>UTR number</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- UTR input -->
+            <div class="pay-confirm-box">
+              <div class="pay-confirm-title">📋 Enter UTR Number</div>
+              <p class="pay-confirm-hint">Find the 12-digit UTR / Reference in your UPI app receipt and enter below.</p>
+              <input type="text" id="txn-id" class="pay-txn-input" placeholder="UTR / Reference number (12 digits)"
+                maxlength="30" autocomplete="off" inputmode="numeric" />
+              <button onclick="confirmSubscription()" class="pay-submit-btn">
+                🔒 Submit UTR &amp; Activate
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── User Profile Modal ── -->
+  <div id="fixed-profile-modal" class="cm-overlay" role="dialog" aria-modal="true" aria-labelledby="profile-title" hidden>
+    <div class="cm-box profile-box">
+      <div class="cm-header">
+        <div class="cm-title-wrap">
+          <span class="cm-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </span>
+          <h3 class="cm-title" id="profile-title">My Profile</h3>
+        </div>
+      </div>
+      <div class="cm-body">
+        <div class="profile-grid">
+
+          <!-- Row 1: Name + Mobile side by side -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px;">
+            <div class="input-group" style="margin-bottom:0;">
+              <label class="label-accent">Full Name</label>
+              <input type="text" id="prof-name" placeholder="Your Name" />
+            </div>
+            <div class="input-group" style="margin-bottom:0;">
+              <label>Mobile Number</label>
+              <input type="text" id="prof-phone" disabled class="input-disabled" />
+            </div>
+          </div>
+
+          <!-- Row 2: Address small box -->
+          <div class="input-group" style="margin-bottom:8px;">
+            <label class="label-accent">Address (Optional)</label>
+            <textarea id="prof-address" placeholder="House / Area / Street" style="height:52px; resize:none;"></textarea>
+          </div>
+
+          <!-- Row 3: Pincode + State side by side -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px;">
+            <div class="input-group" style="margin-bottom:0;">
+              <label class="label-accent">Pincode</label>
+              <input type="text" id="prof-pin" placeholder="6-digit PIN" maxlength="6" oninput="profPincodeChange(this.value)" />
+            </div>
+            <div class="input-group" style="margin-bottom:0;">
+              <label>State <span style="font-size:0.6rem;color:var(--text-secondary);">(auto)</span></label>
+              <input type="text" id="prof-state" readonly class="input-disabled" placeholder="Auto-filled" />
+            </div>
+          </div>
+
+          <!-- Row 4: Email + hidden city -->
+          <div class="input-group" style="margin-bottom:8px;">
+            <label class="label-accent">Email ID</label>
+            <input type="email" id="prof-email" placeholder="email@example.com" />
+          </div>
+          <input type="hidden" id="prof-city" />
+
+          <!-- Social Links -->
+          <div class="social-links-section" style="margin-top:4px;">
+            <label class="social-section-label">🔗 Social Profiles &amp; Auto-Posting</label>
+            <div class="social-inputs-grid">
+              <div class="social-column">
+                <div class="social-input-row">
+                  <span class="social-icon-x">𝕏</span>
+                  <input type="text" id="prof-x-link" placeholder="X Link" />
+                </div>
+                <div class="social-toggle-row" style="display:flex;align-items:center;gap:8px;margin-top:4px;margin-bottom:10px;">
+                  <input type="checkbox" id="prof-x-auto" style="width:14px;height:14px;" />
+                  <label for="prof-x-auto" style="font-size:0.7rem;color:var(--text-secondary);">Auto-post awareness days once daily.</label>
+                </div>
+                <div class="social-input-row">
+                  <span class="social-icon-fb">f</span>
+                  <input type="text" id="prof-fb-link" placeholder="Facebook Link" />
+                </div>
+                <div class="social-toggle-row" style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                  <input type="checkbox" id="prof-fb-auto" style="width:14px;height:14px;" />
+                  <label for="prof-fb-auto" style="font-size:0.7rem;color:var(--text-secondary);">Share to Facebook timeline.</label>
+                </div>
+              </div>
+              <div class="social-column">
+                <div class="social-input-row">
+                  <span class="social-icon-li">in</span>
+                  <input type="text" id="prof-li-link" placeholder="LinkedIn Link" />
+                </div>
+                <div class="social-toggle-row" style="display:flex;align-items:center;gap:8px;margin-top:4px;margin-bottom:10px;">
+                  <input type="checkbox" id="prof-li-auto" style="width:14px;height:14px;" />
+                  <label for="prof-li-auto" style="font-size:0.7rem;color:var(--text-secondary);">Post to LinkedIn feed.</label>
+                </div>
+                <div class="social-input-row">
+                  <span class="social-icon-ig">📸</span>
+                  <input type="text" id="prof-ig-link" placeholder="Instagram Link" />
+                </div>
+                <div class="social-toggle-row" style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                  <input type="checkbox" id="prof-ig-auto" style="width:14px;height:14px;" />
+                  <label for="prof-ig-auto" style="font-size:0.7rem;color:var(--text-secondary);">Instagram (Auto-post awareness days).*</label>
+                </div>
+              </div>
+            </div>
+          </div><!-- end social-links-section -->
+          
+          <div class="input-group" style="margin-top:12px; display:flex; align-items:center; gap:10px; padding:10px; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+            <input type="checkbox" id="prof-show-teaser" style="width:18px; height:18px; cursor:pointer;" checked />
+            <label for="prof-show-teaser" style="font-size:0.85rem; color:var(--text-primary); cursor:pointer; font-weight:600;">✨ Show Welcome Guide on Landing Page</label>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+            <button id="prof-save-btn" class="btn-save" style="flex:1; min-width:130px;">💾 Save Changes</button>
+            <button id="prof-reset-pwd-btn" class="btn-outline-danger" style="flex:1; min-width:130px;">🔑 Reset Password</button>
+          </div>
+          <p id="prof-msg" class="modal-msg"></p>
+
+        </div><!-- end profile-grid -->
+      </div><!-- end cm-box -->
+    </div><!-- end cm-overlay -->
+
+  <!-- ── Welcome Onboarding Modal ── -->
+  <div id="welcome-modal" class="cm-overlay" hidden>
+    <div class="cm-box welcome-box" style="max-width: 480px; text-align: center; padding: 40px 32px;">
+      <div class="welcome-icon" style="font-size: 3rem; margin-bottom: 20px;">👋</div>
+      <h2 style="font-family: 'Outfit', sans-serif; margin-bottom: 12px;">Welcome to Important Days!</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6;">
+        Your daily companion for global awareness. Explore health days, UN observances, and Indian festivals.
+      </p>
+      <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+          <span>📅</span>
+          <div><strong>Dynamic Calendar</strong>: Click any date to see what the world is celebrating.</div>
+        </div>
+        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+          <span>🤖</span>
+          <div><strong>AI Content</strong>: Get personalized awareness posts for social media.</div>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <span>🎁</span>
+          <div><strong>10-Day Trial</strong>: Enjoy full access. Upgrade anytime from your profile.</div>
+        </div>
+      </div>
+      <button onclick="closeWelcomeModal()" class="cm-btn cm-btn-primary" style="width: 100%; padding: 14px; font-weight: 700;">Let's Get Started</button>
+    </div>
+  </div>
+
+  <!-- ── Success Toast Container ── -->
+  <div id="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;"></div>
+
+    <!-- ── Scripts ── -->
+    <script src="data.js"></script>
+    <script src="app.js?v=21"></script>
+</body>
+
+</html>

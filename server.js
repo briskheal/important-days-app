@@ -1,0 +1,506 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const nodemailer = require('nodemailer');
+
+const mongoose = require('mongoose');
+const axios = require('axios');
+
+const app = express();
+const PORT = process.env.PORT || 8083;
+const MONGODB_URI = process.env.MONGODB_URI;
+
+// ── MongoDB Connection ──────────────────────────
+let dbConnected = false;
+if (MONGODB_URI && !MONGODB_URI.includes('your_mongodb_atlas')) {
+    mongoose.connect(MONGODB_URI, {
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+    })
+        .then(() => {
+            console.log('[OK] Connected to MongoDB Atlas');
+            dbConnected = true;
+        })
+        .catch(err => {
+            console.error('[ERR] MongoDB Connection Error:', err.message);
+            console.error('[HINT] Check Render Env Vars and MongoDB IP Whitelist.');
+            dbConnected = false;
+        });
+} else {
+    console.warn('[WARN] No valid MONGODB_URI found. Check your environment configuration.');
+}
+
+// Middleware to check DB connection for API routes
+const checkDb = (req, res, next) => {
+    if (!dbConnected && req.path.startsWith('/api')) {
+        return res.status(503).json({ 
+            error: 'Backend Database Not Connected',
+            message: 'The server is up, but the database connection failed. Please check MONGODB_URI in Render dashboard and IP Whitelist in MongoDB Atlas.',
+            status: 503
+        });
+    }
+    next();
+};
+app.use(checkDb);
+
+// ── Mongoose Schemas ────────────────────────────
+const userSchema = new mongoose.Schema({
+    name: String,
+    phone: { type: String, unique: true, required: true },
+    email: String,
+    address: String,
+    city: String,
+    pincode: String,
+    state: String,
+    loginId: { type: String, unique: true },
+    password: { type: String, default: '1306' },
+    createdAt: { type: Date, default: Date.now },
+    first_login: { type: Boolean, default: true }
+}, { strict: false });
+
+const paymentSchema = new mongoose.Schema({
+    userName: String,
+    mobile: String,
+    email: String,
+    type: String,
+    amount: Number,
+    txnId: { type: String, unique: true },
+    status: { type: String, default: 'pending' },
+    paidAt: { type: Date, default: Date.now },
+    expiry: Date,
+    reason: String,
+    actionAt: Date
+});
+
+const adminSchema = new mongoose.Schema({
+    id: { type: String, unique: true, default: 'EMYRIS' },
+    pwd: { type: String, default: 'NEW@1306' }
+});
+
+const User = mongoose.model('User', userSchema);
+const Payment = mongoose.model('Payment', paymentSchema);
+const Admin = mongoose.model('Admin', adminSchema);
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.text());
+
+// Normalization helper
+const normPhone = (s) => (s || '').replace(/\D/g, '');
+
+// Serve static files
+// ── Serving Files ───────────────────────────────
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'landing.html'));
+});
+
+// Explicit route for Admin Panel (allows access via /admin)
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        database: dbConnected ? 'connected' : 'disconnected',
+        time: new Date().toISOString()
+    });
+});
+
+// Redirect /login to /login.html
+app.get('/login', (req, res) => {
+    res.redirect('/login.html');
+});
+
+app.use(express.static(__dirname));
+
+// Email Configuration
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+// ── API ROUTES ──────────────────────────────────
+
+// 1. REGISTER / SYNC
+app.post('/api/register', async (req, res) => {
+    try {
+        const data = req.body;
+        if (!data.phone) return res.status(400).send('Missing phone');
+
+        let user = await User.findOne({ phone: normPhone(data.phone) });
+
+        if (!user) {
+            user = new User({ ...data, phone: normPhone(data.phone), createdAt: new Date(), first_login: true });
+            await user.save();
+            console.log(`[OK] New user registered: ${data.name} (${normPhone(data.phone)})`);
+            res.json({ status: 'success', user });
+        } else {
+            Object.assign(user, data);
+            user.phone = normPhone(data.phone);
+            await user.save();
+            console.log(`[OK] User data synced: ${data.name}`);
+            res.json({ status: 'success', user });
+        }
+    } catch (err) {
+        console.error("Registration error:", err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 2. CHECK PHONE (New)
+app.post('/api/check-phone', async (req, res) => {
+    try {
+        const { phone } = req.body;
+        if (!phone) return res.status(400).json({ error: "Phone required" });
+        const user = await User.findOne({ phone: normPhone(phone) });
+        if (user) {
+            return res.json({ exists: true, name: user.name, loginId: user.loginId });
+        }
+        res.json({ exists: false });
+    } catch (err) {
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// 2. USER LOGIN
+app.post('/api/login', async (req, res) => {
+    try {
+        const { loginId, password } = req.body;
+        const user = await User.findOne({ loginId, password });
+        
+        if (user) {
+            console.log(`[OK] User Logged in: ${user.name}`);
+            res.json({ status: 'success', user });
+        } else {
+            res.status(401).json({ status: 'fail', message: 'Invalid ID or Password' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 3. ADMIN LOGIN
+app.post('/api/admin/login', async (req, res) => {
+    try {
+        const { id, pwd } = req.body;
+        console.log(`[INFO] Admin Login Attempt: ID=${id}`);
+
+        let admin = await Admin.findOne({ id });
+        
+        // Setup initial admin or UPDATE if master credentials match
+        // This ensures the user can always regain access with these specific credentials
+        if (id === 'EMYRIS' && pwd === 'NEW@1306') {
+            if (!admin) {
+                admin = new Admin({ id, pwd });
+                await admin.save();
+                console.log(`[OK] Master admin created`);
+            } else if (admin.pwd !== pwd) {
+                admin.pwd = pwd;
+                await admin.save();
+                console.log(`[OK] Master admin password reset`);
+            }
+        }
+
+        if (admin && admin.pwd === pwd) {
+            console.log(`[OK] Admin Logged in: ${id}`);
+            res.json({ status: 'success' });
+        } else {
+            console.warn(`[WARN] Admin Login Failed: ID=${id} (Invalid Credentials)`);
+            res.status(401).json({ status: 'fail', message: 'Invalid Admin ID or Password' });
+        }
+    } catch (err) {
+        console.error("[ERR] Admin login error:", err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 4. RECOVER ACCOUNT
+app.post('/api/recover-account', async (req, res) => {
+    try {
+        const { phone } = req.body;
+        const searchPhone = normPhone(phone);
+        
+        let user = await User.findOne({ phone: searchPhone });
+        
+        // Fallback: search by last 10 digits (common for India context)
+        if (!user && searchPhone.length >= 10) {
+            const last10 = searchPhone.slice(-10);
+            user = await User.findOne({ phone: { $regex: last10 + '$' } });
+        }
+        
+        if (user) {
+            res.json({ status: 'success', loginId: user.loginId });
+        } else {
+            res.status(404).json({ status: 'error', message: 'Account not found' });
+        }
+    } catch (err) {
+        console.error("Recovery error:", err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 5. RESET PASSWORD
+app.post('/api/reset-password', async (req, res) => {
+    try {
+        const { phone, newPassword } = req.body;
+        const searchPhone = normPhone(phone);
+        
+        // Try exact first
+        let result = await User.findOneAndUpdate({ phone: searchPhone }, { password: newPassword });
+        
+        // Fallback: search by last 10 digits
+        if (!result && searchPhone.length >= 10) {
+            const last10 = searchPhone.slice(-10);
+            const user = await User.findOne({ phone: { $regex: last10 + '$' } });
+            if (user) {
+                user.password = newPassword;
+                await user.save();
+                result = user;
+            }
+        }
+        
+        if (result) {
+            res.json({ status: 'success' });
+        } else {
+            res.status(404).json({ status: 'error', message: 'User not found' });
+        }
+    } catch (err) {
+        console.error("Reset error:", err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 6. ADMIN: GET ALL USERS
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const users = await User.find().sort({ createdAt: -1 });
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 7. SUBMIT PAYMENT (NOTIFY)
+app.post('/api/notify-payment', async (req, res) => {
+    try {
+        let data = req.body;
+        if (typeof data === 'string') data = JSON.parse(data);
+
+        const { userName, mobile, type, amount, txnId, email: customerEmail } = data;
+        console.log(`[INFO] Payment Notification: User=${userName}, UTR=${txnId}`);
+
+        // Email to Admin
+        const adminMailOptions = {
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_USER,
+            subject: `New Subscription Payment: ${userName} (${type})`,
+            text: `New payment received.\n\nUser: ${userName}\nMobile: ${mobile}\nPlan: ${type}\nAmount: ${amount}\nUTR: ${txnId}`
+        };
+        await transporter.sendMail(adminMailOptions).catch(e => console.error("Admin Email Fail:", e));
+
+        // Save to MongoDB
+        const newPayment = new Payment({
+            userName, mobile: normPhone(mobile), email: customerEmail, type, amount, txnId,
+            status: 'pending', paidAt: new Date()
+        });
+        await newPayment.save();
+
+        // Email to Customer
+        if (customerEmail && customerEmail.includes('@')) {
+            const customerMailOptions = {
+                from: process.env.EMAIL_USER,
+                to: customerEmail,
+                subject: `Payment Received: Important Days Subscription`,
+                text: `Dear ${userName},\n\nWe received your payment of Rs. ${amount}. Your UTR is ${txnId}.\nVerification is in progress.`
+            };
+            await transporter.sendMail(customerMailOptions).catch(e => console.error("Customer Email Fail:", e));
+        }
+
+        res.json({ status: 'success', message: 'Payment recorded.' });
+    } catch (error) {
+        console.error('Payment Error:', error);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
+// 8. ADMIN: GET LEDGER
+app.get('/api/admin/ledger', async (req, res) => {
+    try {
+        const payments = await Payment.find().sort({ paidAt: -1 });
+        res.json(payments);
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 9. ADMIN: UPDATE STATUS
+app.post('/api/admin/update-status', async (req, res) => {
+    try {
+        const { mobile, txnId, status, expiry, reason } = req.body;
+        const result = await Payment.findOneAndUpdate(
+            { mobile: normPhone(mobile), txnId },
+            { status, expiry, reason, actionAt: new Date() },
+            { new: true }
+        );
+        
+        if (result) {
+            res.json({ status: 'success' });
+        } else {
+            res.status(404).send('Payment record not found');
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 10. USER: SUBSCRIPTION STATUS
+app.get('/api/subscription-status', async (req, res) => {
+    try {
+        const { mobile } = req.query;
+        if (!mobile) return res.status(400).send('Missing mobile');
+
+        const payment = await Payment.findOne({ mobile: normPhone(mobile) }).sort({ paidAt: -1 });
+        if (payment) {
+            res.json(payment);
+        } else {
+            res.json({ status: 'none' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// 11. NOTIFY STATUS (EMAIL)
+app.post('/api/notify-status', async (req, res) => {
+    try {
+        let data = req.body;
+        if (typeof data === 'string') data = JSON.parse(data);
+        const { email, name, statusText, msgText } = data;
+
+        if (email && email.includes('@')) {
+            await transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: `Subscription Update: ${statusText}`,
+                text: `Dear ${name},\n\n${msgText}\n\nThank you!`
+            });
+        }
+        res.status(200).send("OK");
+    } catch (err) {
+        res.status(500).send('Status email failed');
+    }
+});
+
+// 12. SMART AI CONTENT
+app.get('/api/content', async (req, res) => {
+    try {
+        const { date: mmdd, name, category } = req.query;
+        let variants = [];
+        let hashtags = "";
+        let cta = "";
+
+        if (!name) return res.status(400).json({ error: "Missing name" });
+
+        console.log(`[INFO] Generating content for: ${name} (${category})`);
+
+        // Variant 1: Template-based
+        let templateContent = "";
+        switch (category) {
+            case "Festival":
+                templateContent = `✨ Happy ${name}! Celebrate this beautiful festival with your loved ones. Spread joy, happiness, and traditional values today!`;
+                hashtags = `#${(name||'').replace(/\s/g, '')} #Festival #Joy #Celebration #FestiveVibes`;
+                cta = `🎈 Share the festive spirit with everyone!`;
+                break;
+            case "Health":
+                templateContent = `💪 Today is ${name}. Health is your greatest wealth. Let's take a pledge to stay fit, stay aware, and build a healthier future together!`;
+                hashtags = `#${(name||'').replace(/\s/g, '')} #Health #Wellness #Awareness #HealthyLiving`;
+                cta = `💙 Spread health awareness and inspire others!`;
+                break;
+            case "India-National":
+                templateContent = `🇮🇳 Observing ${name}. Proud of our heritage and the values this day represents. A time to reflect on our history and future. Jai Hind!`;
+                hashtags = `#${(name||'').replace(/\s/g, '')} #India #NationalPride #Heritage #Bharat #JaiHind`;
+                cta = `🇮🇳 Share with pride and honor!`;
+                break;
+            default:
+                templateContent = `📅 Today is ${name}. An important day to reflect on the values and awareness it brings to our lives and society globally.`;
+                hashtags = `#${(name||'').replace(/\s/g, '')} #ImportantDay #Awareness #Knowledge #Significance`;
+                cta = `✨ Share this knowledge and spread importance!`;
+        }
+        variants.push(templateContent);
+
+        // Variant 2: Generic Awareness / Educational
+        variants.push(`🔍 Did you know today is ${name}? It's a day dedicated to raising awareness, celebrating milestones, and understanding the deep significance of this event. Let's make a positive impact together by sharing the word!`);
+
+        // Variant 3: Wikipedia-based (Rich Content)
+        try {
+            const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name.replace(/ /g, "_"))}`;
+            const wikiRes = await axios.get(wikiUrl, {
+                headers: { 'User-Agent': 'ImportantDaysApp/1.5 (https://important-days.onrender.com; contact@example.com)' },
+                timeout: 5000
+            });
+            const wikiData = wikiRes.data;
+            if (wikiData && wikiData.extract) {
+                // Sanitize and trim
+                let summary = wikiData.extract.trim();
+                if (summary.length > 500) summary = summary.substring(0, 497) + "...";
+                variants.push(summary);
+                console.log(`[OK] Wikipedia content added for ${name}`);
+            }
+        } catch (e) {
+            console.warn(`[WARN] Wiki fetch failed for ${name}: ${e.message}`);
+            // Fallback for Variant 3 if Wiki fails
+            variants.push(`🌟 Let's take a moment to acknowledge the importance of ${name}. Whether it's through learning more about its history or sharing its values with others, every small action counts in making this day meaningful.`);
+        }
+
+        // Ensure we always have at least 3 variants
+        while (variants.length < 3) {
+            variants.push(`🌈 Celebrating ${name} today! A perfect opportunity to learn, grow, and share the significance of this special observance with your network.`);
+        }
+
+        res.json({ status: "success", variants, hashtags, cta, isAi: true });
+    } catch (err) {
+        console.error("AI Content Error:", err);
+        res.status(500).json({ error: "Failed to generate content" });
+    }
+});
+
+// 13. RESET DATABASE (Protected)
+app.post('/api/admin/reset-db', async (req, res) => {
+    try {
+        const { id, pwd } = req.body;
+        // Basic check for master credentials
+        if (id !== 'EMYRIS' || pwd !== 'NEW@1306') {
+            return res.status(401).json({ error: 'Unauthorized reset attempt' });
+        }
+        
+        await User.deleteMany({});
+        await Payment.deleteMany({});
+        console.log(`[OK] Database cleared by admin.`);
+        res.json({ status: 'success' });
+    } catch (err) {
+        res.status(500).json({ error: 'Reset failed' });
+    }
+});
+
+// Fallback error handler 
+app.use((req, res) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API route not found' });
+    }
+    console.log(`[WARN] 404 Not Found: ${req.url}`);
+    res.status(404).sendFile(path.join(__dirname, 'landing.html'));
+});
+
+// Start Server
+app.listen(PORT, () => {
+    console.log(`[INFO] Server started at http://localhost:${PORT}/`);
+});
