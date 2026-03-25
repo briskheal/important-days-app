@@ -133,7 +133,11 @@
             status.innerHTML = '<span class="spinning">⏳</span> Connecting to server...';
 
             try {
-                const res = await fetch(getApiUrl('/api/admin/reset-db'), { method: 'POST' });
+                const res = await fetch(getApiUrl('/api/admin/reset-db'), { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: 'EMYRIS', pwd: 'NEW@1306' })
+                });
                 
                 if (res.ok) {
                     status.style.color = "#10b981";
