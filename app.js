@@ -4,6 +4,12 @@
 
 'use strict';
 
+// ── Global Helper: Normalize Phone ──────────────────
+window.normPhone = function(p) {
+    if (!p) return "";
+    return String(p).replace(/\D/g, '');
+};
+
 // ── API URL Helper ──────────────────
 function getApiUrl(path) {
     if (window.location.protocol === 'file:') {
@@ -1808,7 +1814,7 @@ window.updatePaymentHistoryUI = function() {
             <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.03); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
                 <div>
                     <div style="font-size:0.8rem; font-weight:600; color:#fff;">${(p.type||'plan').toUpperCase()} - ₹${p.amount}</div>
-                    <div style="font-size:0.65rem; color:var(--text-secondary);">${dateStr} • UTR: ${p.txnId.substring(0,8)}...</div>
+                    <div style="font-size:0.65rem; color:var(--text-secondary);">${dateStr} • UTR: ${(p.txnId || 'N/A').substring(0,8)}...</div>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span class="welcome-badge ${statusClass}" style="margin:0; padding:2px 8px; font-size:0.6rem;">${(p.status||'pending').toUpperCase()}</span>
