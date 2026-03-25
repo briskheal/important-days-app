@@ -568,17 +568,15 @@
         // Store last generated creds globally for auto-fill
         let _lastCreds = null;
 
-        function generateCreds() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let id = 'USR-';
-            for (let i = 0; i < 4; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
-            let pwd = '';
-            for (let i = 0; i < 6; i++) pwd += Math.floor(Math.random() * 10);
-            return { id, pwd };
-        }
+        // ID generation moved to backend for consistency
 
         async function handleLogin(e) {
             e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalBtnText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Creating Account...';
+
             const name = document.getElementById('login-name').value.trim();
             const ccode = document.getElementById('login-ccode').value.trim();
             const phone = document.getElementById('login-phone').value.trim();
@@ -588,39 +586,50 @@
             const state = document.getElementById('login-state').value.trim();
             const fullPhone = ccode + ' ' + phone;
 
-            const creds = generateCreds();
-            const newUser = {
-                loginId: creds.id,
-                password: creds.pwd,
-                name, phone: fullPhone, email, address, pincode, state,
-                createdAt: new Date().toISOString()
+            const userData = {
+                name, phone: fullPhone, email, address, pincode, state
             };
 
-            // Sync to Local
-            const allUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
-            allUsers.push(newUser);
-            localStorage.setItem('importantDays_allUsers', JSON.stringify(allUsers));
-            localStorage.setItem('importantDays_user', JSON.stringify(newUser));
-
-            // Sync to Server
+            // Sync to Server & Get Credentials
             try {
-                await fetch(getApiUrl('/api/register'), {
+                const res = await fetch(getApiUrl('/api/register'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newUser)
+                    body: JSON.stringify(userData)
                 });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const user = data.user;
+                    
+                    // Sync to Local
+                    const allUsers = JSON.parse(localStorage.getItem('importantDays_allUsers') || '[]');
+                    const existingIdx = allUsers.findIndex(u => u.phone === user.phone);
+                    if (existingIdx !== -1) allUsers[existingIdx] = user;
+                    else allUsers.push(user);
+                    
+                    localStorage.setItem('importantDays_allUsers', JSON.stringify(allUsers));
+                    localStorage.setItem('importantDays_user', JSON.stringify(user));
+
+                    _lastCreds = { id: user.loginId, pwd: user.password };
+                    
+                    const waPhone = user.phone.replace(/\D/g, '');
+                    const waText = encodeURIComponent(`Hello ${user.name},\n\nYour Calendar credentials:\n*ID:* ${user.loginId}\n*PWD:* ${user.password}`);
+                    document.getElementById('wa-share-btn').href = `https://wa.me/${waPhone}?text=${waText}`;
+                    document.getElementById('display-login-id').textContent = user.loginId;
+                    document.getElementById('display-login-pwd').textContent = user.password;
+
+                    showStep('step-credentials');
+                } else {
+                    alert("Registration failed. Please try again.");
+                }
             } catch (err) {
-                console.warn("Backend sync failed, using local storage fallback", err);
+                console.error("Backend sync failed", err);
+                alert("Connection error. Account could not be created.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalBtnText;
             }
-
-            _lastCreds = creds;
-            const waPhone = (ccode + phone).replace(/\D/g, '');
-            const waText = encodeURIComponent(`Hello ${name},\n\nYour Calendar credentials:\n*ID:* ${creds.id}\n*PWD:* ${creds.pwd}`);
-            document.getElementById('wa-share-btn').href = `https://wa.me/${waPhone}?text=${waText}`;
-            document.getElementById('display-login-id').textContent = creds.id;
-            document.getElementById('display-login-pwd').textContent = creds.pwd;
-
-            showStep('step-credentials');
         }
 
         function proceedToLogin() {

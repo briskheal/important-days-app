@@ -112,6 +112,23 @@ app.use(express.text());
 // Normalization helper
 const normPhone = (s) => (s || '').replace(/\D/g, '');
 
+// Fuzzy Phone Matcher: Finds user by exact phone or last 10 digits
+const findUserByPhone = async (phone) => {
+    const s = normPhone(phone);
+    if (!s) return null;
+    
+    // 1. Exact Match
+    let user = await User.findOne({ phone: s });
+    if (user) return user;
+    
+    // 2. Last 10 Digits Match (Fuzzy)
+    if (s.length >= 10) {
+        const last10 = s.slice(-10);
+        user = await User.findOne({ phone: new RegExp(last10 + '$') });
+    }
+    return user;
+};
+
 // Serve static files
 // ── Serving Files ───────────────────────────────
 app.get('/', (req, res) => {
@@ -162,18 +179,44 @@ app.post('/api/register', async (req, res) => {
         const data = req.body;
         if (!data.phone) return res.status(400).send('Missing phone');
 
-        let user = await User.findOne({ phone: normPhone(data.phone) });
+        const normalizedPhone = normPhone(data.phone);
+        let user = await findUserByPhone(normalizedPhone);
 
         if (!user) {
-            user = new User({ ...data, phone: normPhone(data.phone), createdAt: new Date(), first_login: true });
+            // GENERATE NEW CREDENTIALS ON BACKEND
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let newId = 'USR-';
+            for (let i = 0; i < 4; i++) newId += chars.charAt(Math.floor(Math.random() * chars.length));
+            
+            // Check for ID collision (rare but possible)
+            let existingId = await User.findOne({ loginId: newId });
+            while (existingId) {
+                newId = 'USR-';
+                for (let i = 0; i < 4; i++) newId += chars.charAt(Math.floor(Math.random() * chars.length));
+                existingId = await User.findOne({ loginId: newId });
+            }
+
+            const newPwd = Math.floor(100000 + Math.random() * 900000).toString(); // Secure 6-digit random
+
+            user = new User({ 
+                ...data, 
+                phone: normalizedPhone, 
+                loginId: newId, 
+                password: newPwd,
+                createdAt: new Date(), 
+                first_login: true 
+            });
             await user.save();
-            console.log(`[OK] New user registered: ${data.name} (${normPhone(data.phone)})`);
+            console.log(`[OK] New user registered on backend: ${data.name} (ID: ${newId})`);
             res.json({ status: 'success', user });
         } else {
-            Object.assign(user, data);
-            user.phone = normPhone(data.phone);
+            // SYNC DATA BUT PRESERVE SENSITIVE CREDENTIALS
+            // We ignore any loginId or password sent from the frontend to ensure consistency
+            const { loginId, password, ...profileData } = data;
+            Object.assign(user, profileData);
+            user.phone = normalizedPhone;
             await user.save();
-            console.log(`[OK] User data synced: ${data.name}`);
+            console.log(`[OK] User data synced: ${user.name} (ID: ${user.loginId})`);
             res.json({ status: 'success', user });
         }
     } catch (err) {
@@ -187,7 +230,7 @@ app.post('/api/check-phone', async (req, res) => {
     try {
         const { phone } = req.body;
         if (!phone) return res.status(400).json({ error: "Phone required" });
-        const user = await User.findOne({ phone: normPhone(phone) });
+        const user = await findUserByPhone(phone);
         if (user) {
             return res.json({ exists: true, name: user.name, loginId: user.loginId });
         }
@@ -255,20 +298,16 @@ app.post('/api/admin/login', async (req, res) => {
 app.post('/api/recover-account', async (req, res) => {
     try {
         const { phone } = req.body;
-        const searchPhone = normPhone(phone);
+        if (!phone) return res.status(400).json({ error: "Phone required" });
         
-        let user = await User.findOne({ phone: searchPhone });
-        
-        // Fallback: search by last 10 digits (common for India context)
-        if (!user && searchPhone.length >= 10) {
-            const last10 = searchPhone.slice(-10);
-            user = await User.findOne({ phone: { $regex: last10 + '$' } });
-        }
+        let user = await findUserByPhone(phone);
         
         if (user) {
-            res.json({ status: 'success', loginId: user.loginId });
+            console.log(`[OK] Account recovered for: ${user.name} (${user.phone})`);
+            res.json({ status: 'success', loginId: user.loginId, name: user.name });
         } else {
-            res.status(404).json({ status: 'error', message: 'Account not found' });
+            console.warn(`[WARN] Recovery failed for phone: ${phone}`);
+            res.status(404).json({ status: 'error', message: 'Account not found. Please register first.' });
         }
     } catch (err) {
         console.error("Recovery error:", err);
@@ -280,26 +319,18 @@ app.post('/api/recover-account', async (req, res) => {
 app.post('/api/reset-password', async (req, res) => {
     try {
         const { phone, newPassword } = req.body;
-        const searchPhone = normPhone(phone);
+        if (!phone || !newPassword) return res.status(400).json({ error: "Phone and Password required" });
         
-        // Try exact first
-        let result = await User.findOneAndUpdate({ phone: searchPhone }, { password: newPassword });
+        let user = await findUserByPhone(phone);
         
-        // Fallback: search by last 10 digits
-        if (!result && searchPhone.length >= 10) {
-            const last10 = searchPhone.slice(-10);
-            const user = await User.findOne({ phone: { $regex: last10 + '$' } });
-            if (user) {
-                user.password = newPassword;
-                await user.save();
-                result = user;
-            }
-        }
-        
-        if (result) {
+        if (user) {
+            user.password = newPassword;
+            await user.save();
+            console.log(`[OK] Password reset for: ${user.name} (${user.phone})`);
             res.json({ status: 'success' });
         } else {
-            res.status(404).json({ status: 'error', message: 'User not found' });
+            console.warn(`[WARN] Password reset failed for phone: ${phone}`);
+            res.status(404).json({ status: 'error', message: 'Account not found. Reset failed.' });
         }
     } catch (err) {
         console.error("Reset error:", err);
