@@ -141,8 +141,8 @@ app.use(express.static(__dirname));
 // Email Configuration
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true, // Port 465 is more reliable for direct SSL/TLS in cloud environments
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -559,6 +559,31 @@ app.post('/api/admin/reset-db', async (req, res) => {
         res.json({ status: 'success' });
     } catch (err) {
         res.status(500).json({ error: 'Reset failed' });
+    }
+});
+
+// 14. ADMIN: TEST EMAIL (For Debugging)
+app.post('/api/admin/test-email', async (req, res) => {
+    try {
+        const { id, pwd } = req.body;
+        if (id !== 'EMYRIS' || pwd !== 'NEW@1306') {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        
+        console.log(`[INFO] Admin triggered email test to ${process.env.EMAIL_USER}`);
+        
+        await transporter.sendMail({
+            from: `"Email Test" <${process.env.EMAIL_USER}>`,
+            to: process.env.EMAIL_USER,
+            subject: "🛠️ Admin Email Test - Important Days App",
+            text: "This is a direct test of the SMTP configuration from the server.",
+            html: `<h3>SMTP Test Successful!</h3><p>Your server at <b>${req.headers.host}</b> is able to send emails correctly.</p>`
+        });
+
+        res.json({ status: 'success', message: 'Test email sent successfully.' });
+    } catch (err) {
+        console.error("[ERR] Admin Test Email Failed:", err);
+        res.status(500).json({ status: 'error', message: err.message });
     }
 });
 

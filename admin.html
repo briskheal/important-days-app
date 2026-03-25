@@ -430,6 +430,9 @@
                     <button class="btn btn-purple" onclick="exportPayments()"
                         style="background:#4cc9f0;color:#0b0e1a;">⬇️ Export Payments</button>
                     <button class="btn btn-red" onclick="confirmReset()">🧹 Reset DB</button>
+                    <button class="btn btn-green" onclick="testAdminEmail()"
+                        style="background:rgba(67,208,138,0.1);color:#43d08a;border:1px solid rgba(67,208,138,0.3);">📧
+                        Test Email</button>
                     <button class="btn btn-red" onclick="adminLogout()"
                         style="background:rgba(247,37,133,0.1);color:#f72585;border:1px solid rgba(247,37,133,0.3);">🚪
                         Logout</button>
@@ -531,6 +534,31 @@
         function adminLogout() {
             localStorage.removeItem('importantDays_admin_session');
             window.location.replace('landing.html');
+        }
+
+        async function testAdminEmail() {
+            if (!confirm("Send a test email to check SMTP configuration?")) return;
+            
+            // We use the master credentials for simplicity as per server.js logic
+            const id = 'EMYRIS';
+            const pwd = 'NEW@1306';
+            
+            try {
+                const res = await fetch(getApiUrl('/api/admin/test-email'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, pwd })
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    alert('Test email sent successfully! Check your inbox (and Spam).');
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Connection to server failed');
+            }
         }
 
         // Auto login if session active
