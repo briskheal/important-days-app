@@ -323,10 +323,22 @@ app.post('/api/notify-payment', async (req, res) => {
 
         // Email to Admin
         const adminMailOptions = {
-            from: process.env.EMAIL_USER,
+            from: `"Important Days Admin" <${process.env.EMAIL_USER}>`,
             to: process.env.EMAIL_USER,
-            subject: `New Subscription Payment: ${userName} (${type})`,
-            text: `New payment received.\n\nUser: ${userName}\nMobile: ${mobile}\nPlan: ${type}\nAmount: ${amount}\nUTR: ${txnId}`
+            subject: `🔔 New Subscription Payment: ${userName}`,
+            text: `New payment received.\n\nUser: ${userName}\nMobile: ${mobile}\nPlan: ${type}\nAmount: ${amount}\nUTR: ${txnId}`,
+            html: `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                    <h2 style="color: #7c6fff;">New Subscription Payment</h2>
+                    <p><strong>User:</strong> ${userName}</p>
+                    <p><strong>Mobile:</strong> ${mobile}</p>
+                    <p><strong>Plan:</strong> ${type.toUpperCase()}</p>
+                    <p><strong>Amount:</strong> ₹${amount}</p>
+                    <p><strong>UTR:</strong> ${txnId}</p>
+                    <hr>
+                    <p style="font-size: 0.8rem; color: #666;">Please verify this in the Admin Dashboard.</p>
+                </div>
+            `
         };
         await transporter.sendMail(adminMailOptions).catch(e => {
             console.error("[ERR] Admin Notification Email Failed:", e.message);
@@ -343,10 +355,21 @@ app.post('/api/notify-payment', async (req, res) => {
         // Email to Customer
         if (customerEmail && customerEmail.includes('@')) {
             const customerMailOptions = {
-                from: process.env.EMAIL_USER,
+                from: `"Important Days" <${process.env.EMAIL_USER}>`,
                 to: customerEmail,
-                subject: `Payment Received: Important Days Subscription`,
-                text: `Dear ${userName},\n\nWe received your payment of Rs. ${amount}. Your UTR is ${txnId}.\nVerification is in progress.`
+                subject: `Payment Received - Verification in Progress`,
+                text: `Dear ${userName},\n\nWe received your payment of Rs. ${amount}. Your UTR is ${txnId}.\nVerification is in progress and usually takes less than 24 hours.`,
+                html: `
+                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #7c6fff; border-radius: 10px; max-width: 500px;">
+                        <h2 style="color: #7c6fff;">Payment Received</h2>
+                        <p>Dear <strong>${userName}</strong>,</p>
+                        <p>We've received your payment of <strong>₹${amount}</strong> for the <strong>${type}</strong> subscription.</p>
+                        <p><strong>UTR:</strong> ${txnId}</p>
+                        <p>Our team is currently verifying the transaction. Access will be granted within 24 hours.</p>
+                        <hr>
+                        <p style="font-size: 0.8rem; color: #666;">Thank you for your support!</p>
+                    </div>
+                `
             };
             await transporter.sendMail(customerMailOptions).catch(e => {
                 console.error("[ERR] Customer Payment Receipt Email Failed:", e.message);
@@ -417,10 +440,20 @@ app.post('/api/notify-status', async (req, res) => {
 
         if (email && email.includes('@')) {
             await transporter.sendMail({
-                from: process.env.EMAIL_USER,
+                from: `"Important Days" <${process.env.EMAIL_USER}>`,
                 to: email,
                 subject: `Subscription Update: ${statusText}`,
-                text: `Dear ${name},\n\n${msgText}\n\nThank you!`
+                text: `Dear ${name},\n\n${msgText}\n\nThank you!`,
+                html: `
+                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #7c6fff; border-radius: 10px;">
+                        <h2 style="color: #43d08a;">Subscription Update</h2>
+                        <p>Dear <strong>${name}</strong>,</p>
+                        <p style="font-size: 1.1rem;">${msgText}</p>
+                        <p>If you have any questions, please reply to this email.</p>
+                        <hr>
+                        <p style="font-size: 0.8rem; color: #666;">Important Days App Team</p>
+                    </div>
+                `
             }).catch(e => {
                 console.error("[ERR] Status Update Email Failed:", e.message);
                 console.error("[DEBUG] Full Error:", e);
