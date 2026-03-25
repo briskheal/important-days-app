@@ -316,10 +316,17 @@ app.get('/api/admin/users', async (req, res) => {
 app.post('/api/notify-payment', async (req, res) => {
     try {
         let data = req.body;
-        if (typeof data === 'string') data = JSON.parse(data);
+        if (typeof data === 'string' && data.startsWith('{')) data = JSON.parse(data);
+
+        console.log(`[INFO] Payment Notification API Call:`, JSON.stringify(data, null, 2));
 
         const { userName, mobile, type, amount, txnId, email: customerEmail } = data;
-        console.log(`[INFO] Payment Notification RECEIVED: User=${userName}, Mobile=${mobile}, UTR=${txnId}, Amount=${amount}, Type=${type}`);
+        if (!txnId || !mobile) {
+            console.warn("[WARN] Payment notification missing critical data (UTR or Mobile)");
+            return res.status(400).json({ error: 'Missing UTR or Mobile' });
+        }
+        
+        console.log(`[INFO] Processing Payment: User=${userName}, Mobile=${mobile}, UTR=${txnId}, Amount=${amount}, Type=${type}`);
 
         // Email to Admin
         const adminMailOptions = {
@@ -340,9 +347,10 @@ app.post('/api/notify-payment', async (req, res) => {
                 </div>
             `
         };
-        await transporter.sendMail(adminMailOptions).catch(e => {
+        await transporter.sendMail(adminMailOptions).then(() => {
+            console.log(`[OK] Admin Notification Email SENT to ${process.env.EMAIL_USER}`);
+        }).catch(e => {
             console.error("[ERR] Admin Notification Email Failed:", e.message);
-            console.error("[DEBUG] Full Error:", e);
         });
 
         // Save to MongoDB
@@ -371,13 +379,17 @@ app.post('/api/notify-payment', async (req, res) => {
                     </div>
                 `
             };
-            await transporter.sendMail(customerMailOptions).catch(e => {
-                console.error("[ERR] Customer Payment Receipt Email Failed:", e.message);
-                console.error("[DEBUG] Full Error:", e);
+            await transporter.sendMail(customerMailOptions).then(() => {
+                console.log(`[OK] Customer Receipt Email SENT to ${customerEmail}`);
+            }).catch(e => {
+                console.error("[ERR] Customer Receipt Email Failed:", e.message);
             });
+        } else {
+            console.log(`[INFO] No customer email provided, skipping receipt.`);
         }
 
-        res.json({ status: 'success', message: 'Payment recorded.' });
+        console.log(`[OK] Payment notification fully processed for ${txnId}`);
+        res.json({ status: 'success', message: 'Payment recorded and notifications triggered.' });
     } catch (error) {
         console.error('Payment Error:', error);
         res.status(500).json({ status: 'error', message: error.message });
