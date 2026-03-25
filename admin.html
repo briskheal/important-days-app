@@ -744,7 +744,7 @@
                     renderDashboard();
                     
                     alert('Subscription approved successfully!');
-                    sendAdminEmail(mobile, 'APPROVED', `Congratulations! Your payment for ${type.toUpperCase()} subscription has been APPROVED. Your account is now active.`);
+                    // sendAdminEmail(mobile, 'APPROVED', `Congratulations! Your payment for ${type.toUpperCase()} subscription has been APPROVED. Your account is now active.`);
                 } else {
                     alert("Failed to update status on server.");
                 }
@@ -768,8 +768,6 @@
                 });
                 
                 if (res.ok) {
-                    const emailMsg = `Your payment receipt for ${type.toUpperCase()} subscription was REJECTED.\n\nReason: ${reason}\n\nPlease contact Admin at 8878923337 for any clarification or to understand more.\n\nYou can subscribe again from the app with a valid payment.`;
-                    sendAdminEmail(mobile, 'PAYMENT REJECTED', emailMsg);
                     renderDashboard();
                 } else {
                     alert("Failed to update status on server.");

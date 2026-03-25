@@ -403,10 +403,10 @@ app.get('/api/admin/ledger', async (req, res) => {
     }
 });
 
-// 9. ADMIN: UPDATE STATUS
+// 9. ADMIN: UPDATE STATUS (with automatic email notification)
 app.post('/api/admin/update-status', async (req, res) => {
     try {
-        const { mobile, txnId, status, expiry, reason } = req.body;
+        const { mobile, txnId, status, expiry, reason, type } = req.body;
         const result = await Payment.findOneAndUpdate(
             { mobile: normPhone(mobile), txnId },
             { status, expiry, reason, actionAt: new Date() },
@@ -414,11 +414,67 @@ app.post('/api/admin/update-status', async (req, res) => {
         );
         
         if (result) {
+            console.log(`[OK] Status updated to ${status} for UTR: ${txnId}`);
+            
+            // Trigger Email Notification automatically
+            const customerEmail = result.email;
+            const userName = result.userName || 'User';
+            
+            if (customerEmail && customerEmail.includes('@')) {
+                let subject = '';
+                let html = '';
+                
+                if (status === 'approved') {
+                    subject = '✅ Subscription Approved - Important Days App';
+                    html = `
+                        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #43d08a; border-radius: 10px; max-width: 500px;">
+                            <h2 style="color: #43d08a;">Subscription Approved!</h2>
+                            <p>Dear <strong>${userName}</strong>,</p>
+                            <p>Great news! Your payment for the <strong>${(type || '').toUpperCase()}</strong> subscription has been <strong>APPROVED</strong>.</p>
+                            <p>Your account is now active and you have full access to all features.</p>
+                            ${expiry ? `<p><strong>Expiry Date:</strong> ${new Date(expiry).toLocaleDateString()}</p>` : ''}
+                            <hr>
+                            <p style="font-size: 0.8rem; color: #666;">Thank you for your support! Happy exploring.</p>
+                        </div>
+                    `;
+                } else if (status === 'rejected') {
+                    subject = '❌ Subscription Payment Rejected';
+                    html = `
+                        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #f72585; border-radius: 10px; max-width: 500px;">
+                            <h2 style="color: #f72585;">Payment Update</h2>
+                            <p>Dear <strong>${userName}</strong>,</p>
+                            <p>We are sorry to inform you that your payment for the <strong>${(type || '').toUpperCase()}</strong> subscription was <strong>REJECTED</strong>.</p>
+                            <p><strong>Reason:</strong> ${reason || 'Invalid UTR or payment not received'}</p>
+                            <p>If you believe this is a mistake, please contact support at 8878923337 or reply to this email.</p>
+                            <hr>
+                            <p style="font-size: 0.8rem; color: #666;">Important Days App Team</p>
+                        </div>
+                    `;
+                }
+
+                if (subject) {
+                    try {
+                        await sendEmail({
+                            to: customerEmail,
+                            subject: subject,
+                            text: `Hello ${userName}, your subscription status is now: ${status.toUpperCase()}.`,
+                            html: html
+                        });
+                        console.log(`[OK] Status notification email sent to ${customerEmail}`);
+                    } catch (e) {
+                        console.error(`[ERR] Status notification email failed:`, e.message);
+                    }
+                }
+            } else {
+                console.log(`[WARN] No valid email found for ${mobile}, skipping status notification.`);
+            }
+
             res.json({ status: 'success' });
         } else {
             res.status(404).send('Payment record not found');
         }
     } catch (err) {
+        console.error('Update Status Error:', err);
         res.status(500).json({ error: 'Server error' });
     }
 });
