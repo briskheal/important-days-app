@@ -429,6 +429,10 @@
                         style="background:rgba(247,37,133,0.1);color:#f72585;border:1px solid rgba(247,37,133,0.3);">🚪
                         Logout</button>
                     <a href="index.html" class="btn btn-ghost">← App</a>
+                    <div id="db-status-indicator" style="display: flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(0,0,0,0.2); border-radius: 20px; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.05);">
+                        <span id="db-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #6b7491;"></span>
+                        <span id="db-status-text">Checking DB...</span>
+                    </div>
                 </div>
             </div>
 
@@ -567,9 +571,33 @@
 
         // ── Render ────────────────────────────────────────────
         async function renderDashboard() { 
+            await checkDbStatus();
             await refreshData();
             renderStats(); 
             renderList(); 
+        }
+
+        async function checkDbStatus() {
+            try {
+                const res = await fetch('/health');
+                const data = await res.json();
+                const dot = document.getElementById('db-status-dot');
+                const text = document.getElementById('db-status-text');
+                
+                if (data.database === 'connected') {
+                    dot.style.background = '#43d08a';
+                    dot.style.boxShadow = '0 0 8px #43d08a';
+                    text.textContent = 'DB Connected';
+                    text.style.color = '#43d08a';
+                } else {
+                    dot.style.background = '#f87171';
+                    dot.style.boxShadow = '0 0 8px #f87171';
+                    text.textContent = 'DB Disconnected';
+                    text.style.color = '#f87171';
+                }
+            } catch (e) {
+                console.warn("Health check failed", e);
+            }
         }
 
         function renderStats() {

@@ -664,9 +664,11 @@ async function fetchFreeSnippet(date, name, elementId) {
         const res = await fetch(`/api/content?date=${date}&name=${encodeURIComponent(name)}`);
         if (res.ok) {
             const data = await res.json();
-            if (data.status === 'success' && data.freeSnippet) {
+            // Use freeSnippet if available, or first variant as fallback
+            const snippet = data.freeSnippet || (data.variants && data.variants[0]);
+            if (data.status === 'success' && snippet) {
                 el.style.display = 'block';
-                el.querySelector('.free-text').textContent = data.freeSnippet;
+                el.querySelector('.free-text').textContent = snippet;
             }
         }
     } catch (e) {
@@ -1321,6 +1323,10 @@ async function openContentModal(mmdd, eventName, category) {
                     cta = data.cta || buildCTA(ev);
                     backendOk = true;
                 }
+            } else if (response.status === 503) {
+                console.warn("Backend DB disconnected, but server is up.");
+                // We'll proceed to fallback logic below but maybe show a subtle hint
+                this.showFeedback("💡 Using offline cached knowledge (DB disconnected)");
             }
         } catch (beErr) { console.warn("Backend fail:", beErr); }
 

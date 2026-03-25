@@ -34,7 +34,25 @@ if (MONGODB_URI && !MONGODB_URI.includes('your_mongodb_atlas')) {
 
 // Middleware to check DB connection for API routes
 const checkDb = (req, res, next) => {
-    if (!dbConnected && req.path.startsWith('/api')) {
+    // List of routes that MUST have database connection
+    const dbRequiredRoutes = [
+        '/api/register',
+        '/api/check-phone',
+        '/api/login',
+        '/api/admin/login',
+        '/api/recover-account',
+        '/api/reset-password',
+        '/api/admin/users',
+        '/api/notify-payment',
+        '/api/admin/ledger',
+        '/api/admin/update-status',
+        '/api/subscription-status',
+        '/api/admin/reset-db'
+    ];
+
+    const isDbRequired = dbRequiredRoutes.some(route => req.path.startsWith(route));
+
+    if (!dbConnected && isDbRequired) {
         return res.status(503).json({ 
             error: 'Backend Database Not Connected',
             message: 'The server is up, but the database connection failed. Please check MONGODB_URI in Render dashboard and IP Whitelist in MongoDB Atlas.',
@@ -466,7 +484,10 @@ app.get('/api/content', async (req, res) => {
             variants.push(`🌈 Celebrating ${name} today! A perfect opportunity to learn, grow, and share the significance of this special observance with your network.`);
         }
 
-        res.json({ status: "success", variants, hashtags, cta, isAi: true });
+        // Add a freeSnippet for the Quick Fact section in app.js
+        const freeSnippet = variants[0];
+
+        res.json({ status: "success", variants, hashtags, cta, freeSnippet, isAi: true });
     } catch (err) {
         console.error("AI Content Error:", err);
         res.status(500).json({ error: "Failed to generate content" });
