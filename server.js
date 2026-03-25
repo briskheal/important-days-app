@@ -431,6 +431,35 @@ app.post('/api/reset-password', async (req, res) => {
             await user.save();
             
             console.log(`[OK] Password updated for: ${user.name} (${user.phone})`);
+
+            // Send confirmation email
+            if (user.email && user.email.includes('@')) {
+                try {
+                    await sendEmail({
+                        to: user.email,
+                        subject: '🔐 Password Reset Successful - Important Days App',
+                        text: `Hello ${user.name}, your password has been reset successfully. Your Login ID is: ${user.loginId} and your new Password is: ${newPassword}`,
+                        html: `
+                            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #6366f1; border-radius: 12px; max-width: 500px;">
+                                <h2 style="color: #6366f1; margin-top: 0;">Password Reset Successful</h2>
+                                <p>Hello <strong>${user.name}</strong>,</p>
+                                <p>Your password has been successfully updated. Please keep your new credentials safe:</p>
+                                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 20px 0;">
+                                    <p style="margin: 5px 0;"><strong>Login ID:</strong> <code style="color: #6366f1; font-weight: bold;">${user.loginId}</code></p>
+                                    <p style="margin: 5px 0;"><strong>New Password:</strong> <code style="color: #6366f1; font-weight: bold;">${newPassword}</code></p>
+                                </div>
+                                <p style="font-size: 0.9rem; color: #64748b;">If you did not perform this change, please contact support immediately.</p>
+                                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+                                <p style="font-size: 0.8rem; color: #94a3b8;">Important Days App Team</p>
+                            </div>
+                        `
+                    });
+                    console.log(`[OK] Reset confirmation email sent to ${user.email}`);
+                } catch (e) {
+                    console.error("[ERR] Failed to send reset confirmation email:", e.message);
+                }
+            }
+
             res.json({ status: 'success', loginId: user.loginId });
         } else {
             console.warn(`[WARN] Password update failed for phone: ${phone}`);
