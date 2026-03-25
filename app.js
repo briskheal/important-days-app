@@ -1485,7 +1485,7 @@ window.confirmSubscription = function () {
         amount: window.pendingSub.amount
     };
 
-    const subKey = activeUserObj.phone ? `importantDays_subscription_${activeUserObj.phone}` : 'importantDays_subscription';
+    const subKey = user.phone ? `importantDays_subscription_${user.phone}` : 'importantDays_subscription';
     localStorage.setItem(subKey, JSON.stringify(subData));
 
     // Write to payment ledger – admin.html reads this
