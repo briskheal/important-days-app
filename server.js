@@ -98,8 +98,8 @@ const paymentSchema = new mongoose.Schema({
 });
 
 const adminSchema = new mongoose.Schema({
-    id: { type: String, unique: true, default: 'EMYRIS' },
-    pwd: { type: String, default: 'NEW@1306' }
+    id: { type: String, unique: true, default: process.env.ADMIN_ID || 'EMYRIS' },
+    pwd: { type: String, default: process.env.ADMIN_PWD || 'NEW@1306' }
 });
 
 const User = mongoose.model('User', userSchema);
@@ -703,8 +703,10 @@ app.get('/api/content', async (req, res) => {
 app.post('/api/admin/reset-db', async (req, res) => {
     try {
         const { id, pwd } = req.body;
-        // Basic check for master credentials
-        if (id !== 'EMYRIS' || pwd !== 'NEW@1306') {
+        const adminId = process.env.ADMIN_ID || 'EMYRIS';
+        const adminPwd = process.env.ADMIN_PWD || 'NEW@1306';
+
+        if (id !== adminId || pwd !== adminPwd) {
             return res.status(401).json({ error: 'Unauthorized reset attempt' });
         }
         
@@ -721,7 +723,10 @@ app.post('/api/admin/reset-db', async (req, res) => {
 app.post('/api/admin/test-email', async (req, res) => {
     try {
         const { id, pwd } = req.body;
-        if (id !== 'EMYRIS' || pwd !== 'NEW@1306') {
+        const adminId = process.env.ADMIN_ID || 'EMYRIS';
+        const adminPwd = process.env.ADMIN_PWD || 'NEW@1306';
+
+        if (id !== adminId || pwd !== adminPwd) {
             return res.status(401).json({ error: 'Unauthorized' });
         }
         
