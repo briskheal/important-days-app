@@ -1350,19 +1350,21 @@ const ContentUI = {
         const coreTopic = text.split('.')[0].replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 80);
         
         let providerIndex = 0;
-        const providers = ['ai', 'real'];
+        const providers = ['ai', 'real', 'picsum'];
         
         const generateUrl = (idx) => {
             const seed = Math.floor(Math.random() * 1000000);
             const cleanTitle = title.replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 40);
             const cleanTopic = coreTopic.split(' ').slice(0, 5).join(' ');
             
-            if (providers[idx % providers.length] === 'ai') {
+            const type = providers[idx % providers.length];
+            if (type === 'ai') {
                 const prompt = `${cleanTitle} celebration backdrop, ${cleanTopic}, artistic, 4k`;
-                // Revert to stable .ai/p/ endpoint
                 return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true`;
+            } else if (type === 'real') {
+                return `https://loremflickr.com/1080/1350/${encodeURIComponent(cleanTitle.replace(/\s+/g,','))}?lock=${seed}`;
             } else {
-                return `https://loremflickr.com/1080/1350/${encodeURIComponent(cleanTitle + ',' + cleanTopic)}?lock=${seed}`;
+                return `https://picsum.photos/seed/${seed}/1080/1350`;
             }
         };
 
@@ -1380,12 +1382,9 @@ const ContentUI = {
                 <div class="cm-spinner" id="AI-SPINNER" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:32px; height:32px; border-width:3px;"></div>
                 <div id="AI-ERROR" class="ai-error-msg" style="display:none;">
                     <span style="font-size:1.5rem; display:block; margin-bottom:10px;">📉</span>
-                    Generation failed. Keep trying another variant or use your gallery.
+                    Generation failed. Please try again or use your gallery.
                 </div>
-                <img id="AI-IMG" src="${generateUrl(0)}" 
-                     onload="this.style.opacity='1'; document.getElementById('AI-SPINNER').style.display='none'; document.getElementById('AI-ERROR').style.display='none';" 
-                     onerror="providerIndex++; console.warn('Fallback triggered'); if(providerIndex < 4) { this.src = generateUrl(providerIndex); } else { document.getElementById('AI-SPINNER').style.display='none'; document.getElementById('AI-ERROR').style.display='block'; this.style.display='none'; }"
-                     style="opacity:0; transition:opacity 0.4s;">
+                <img id="AI-IMG" src="" style="opacity:0; transition:opacity 0.4s; display:none;">
             </div>
 
             <div style="display:flex; justify-content:center; margin-bottom:20px;">
@@ -1406,15 +1405,41 @@ const ContentUI = {
         const spinner = document.getElementById('AI-SPINNER');
         const errorMsg = document.getElementById('AI-ERROR');
 
-        document.getElementById('AI-TRY-ANOTHER').onclick = () => {
-            providerIndex++;
+        const loadNextPhoto = () => {
             img.style.opacity = '0';
-            img.style.display = 'block';
+            img.style.display = 'none'; // Hide until loaded
             spinner.style.display = 'block';
             errorMsg.style.display = 'none';
-            img.src = generateUrl(providerIndex);
-            console.info("✨ Switch Layer:", providers[providerIndex % providers.length]);
+            const url = generateUrl(providerIndex);
+            console.log(`🖼️ Loading Photo [${providers[providerIndex % providers.length]}]:`, url);
+            img.src = url;
         };
+
+        img.onload = () => {
+            img.style.display = 'block';
+            img.style.opacity = '1';
+            spinner.style.display = 'none';
+            errorMsg.style.display = 'none';
+        };
+
+        img.onerror = () => {
+            console.warn(`❌ Failed for ${providers[providerIndex % providers.length]}. Trying next...`);
+            providerIndex++;
+            if (providerIndex < 5) {
+                loadNextPhoto();
+            } else {
+                spinner.style.display = 'none';
+                errorMsg.style.display = 'block';
+            }
+        };
+
+        document.getElementById('AI-TRY-ANOTHER').onclick = () => {
+            providerIndex++;
+            loadNextPhoto();
+        };
+
+        // Initial load
+        loadNextPhoto();
 
         document.getElementById('AI-CLOSE').onclick = () => overlay.remove();
         
