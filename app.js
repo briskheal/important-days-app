@@ -1347,22 +1347,33 @@ const ContentUI = {
     showAiPhotoSelector(platform) {
         const title = this.title?.textContent || 'Important Day';
         const text = this.variants[this.currentIndex] || '';
-        const coreTopic = text.split('.')[0].replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 80);
         
+        // Advanced Keyword Extraction
+        const getEssenceKeywords = (t) => {
+            const stops = new Set(['today', 'the', 'this', 'that', 'with', 'for', 'from', 'your', 'will', 'have', 'were', 'those', 'also', 'some', 'very', 'than', 'into', 'just', 'only', 'more', 'about', 'daily', 'global', 'india', 'celebration', 'celebrations', 'importance', 'awareness']);
+            const dayWords = title.toLowerCase().split(/\s+/);
+            const words = t.toLowerCase()
+                .replace(/[^a-z\s]/g, '')
+                .split(/\s+/)
+                .filter(w => w.length > 3 && !stops.has(w) && !dayWords.includes(w));
+            
+            // Prioritize middle-of-text words which usually contain the 'meat'
+            return [...new Set(words)].slice(0, 5).join(' ');
+        };
+
+        const essence = getEssenceKeywords(text);
         let providerIndex = 0;
         const providers = ['ai', 'real', 'picsum'];
         
         const generateUrl = (idx) => {
             const seed = Math.floor(Math.random() * 1000000);
-            const cleanTitle = title.replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 40);
-            const cleanTopic = coreTopic.split(' ').slice(0, 5).join(' ');
-            
             const type = providers[idx % providers.length];
+            
             if (type === 'ai') {
-                const prompt = `${cleanTitle} celebration backdrop, ${cleanTopic}, artistic, 4k`;
+                const prompt = `${title}: ${essence}, artistic, cinematic, high-quality photography, 4k`;
                 return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true`;
             } else if (type === 'real') {
-                return `https://loremflickr.com/1080/1350/${encodeURIComponent(cleanTitle.replace(/\s+/g,','))}?lock=${seed}`;
+                return `https://loremflickr.com/1080/1350/${encodeURIComponent(essence.replace(/\s+/g,','))}?lock=${seed}`;
             } else {
                 return `https://picsum.photos/seed/${seed}/1080/1350`;
             }
