@@ -206,6 +206,29 @@ app.post('/api/upload-photo', upload.single('photo'), (req, res) => {
     }
 });
 
+app.post('/api/delete-photo', (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) return res.status(400).json({ error: 'No URL provided' });
+        
+        // Security: Ensure the path is within public/gallery to prevent directory traversal
+        const fileName = path.basename(url);
+        const filePath = path.join(__dirname, 'public', 'gallery', fileName);
+        
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`[OK] Photo deleted: ${filePath}`);
+            res.json({ status: 'success' });
+        } else {
+            console.warn(`[WARN] Delete failed: File not found: ${filePath}`);
+            res.status(404).json({ error: 'File not found' });
+        }
+    } catch (err) {
+        console.error("Delete Error:", err);
+        res.status(500).json({ error: 'Delete failed' });
+    }
+});
+
 // ── EMAIL CONFIGURATION (Google Apps Script Bridge via Axios) ────
 async function sendEmail({ to, subject, text, html }) {
     if (!process.env.EMAIL_BRIDGE_URL || process.env.EMAIL_BRIDGE_URL.includes('your-google-script')) {

@@ -911,13 +911,35 @@ const GalleryUI = {
             }
             
             this.grid.innerHTML = images.map(url => `
-                <div class="gallery-item" onclick="GalleryUI.select('${url}')">
-                    <img src="${getApiUrl(url)}" alt="Gallery Image">
+                <div class="gallery-item">
+                    <button class="gallery-del-btn" onclick="GalleryUI.deletePhoto(event, '${url}')" title="Delete Photo">✕</button>
+                    <img src="${getApiUrl(url)}" alt="Gallery Image" onclick="GalleryUI.select('${url}')">
                 </div>
             `).join('');
         } catch (e) {
             console.error("Gallery Fetch Error:", e);
             this.grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#f87171;">Failed to load gallery.</p>';
+        }
+    },
+    async deletePhoto(e, url) {
+        e.stopPropagation();
+        if (!confirm("Permanently delete this photo from gallery?")) return;
+        
+        try {
+            const res = await fetch(getApiUrl('/api/delete-photo'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                this.show(this.onSelect); // Refresh
+            } else {
+                alert("Delete failed: " + (data.error || 'Server error'));
+            }
+        } catch (err) {
+            console.error("Delete Fail:", err);
+            alert("Connection error. Could not delete.");
         }
     },
     hide() {
@@ -1325,52 +1347,51 @@ const ContentUI = {
     showAiPhotoSelector(platform) {
         const title = this.title?.textContent || 'Important Day';
         const text = this.variants[this.currentIndex] || '';
-        // Clean prompt for better AI Generation
-        const coreTopic = text.split('.')[0].replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 100);
-        const prompt = `Professional minimalist artistic background for ${title}, theme of ${coreTopic}, cinematic lighting, high resolution, 4k, post style`;
-        const encodedPrompt = encodeURIComponent(prompt);
+        const coreTopic = text.split('.')[0].replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 80);
         
+        const generateUrl = () => {
+            const seed = Math.floor(Math.random() * 1000000);
+            const prompt = `Professional minimalist artistic background for ${title}, theme of ${coreTopic}, cinematic lighting, 4k, post style`;
+            return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true`;
+        };
+
         const overlay = document.createElement('div');
         overlay.className = 'ai-photo-selector-overlay';
         overlay.innerHTML = `
             <div class="ai-grid-header">
                 <div style="color:#7c6fff; font-weight:800; font-size:1rem; display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:1.2rem;">✨</span> AI CONTENT DRAFTS
+                    <span style="font-size:1.2rem;">✨</span> AI PHOTO VARIANT
                 </div>
                 <button id="AI-CLOSE" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.5rem; padding:5px;">&times;</button>
             </div>
-            <p style="font-size:0.8rem; color:#94a3b8; margin:0 0 20px 0; line-height:1.4;">Pick a content-matched photo or use your gallery. These are generated on-the-fly for this day.</p>
             
-            <div class="ai-photo-grid" id="AI-PHOTO-GRID">
-                ${[1,2,3,4].map(seed => `
-                    <div class="ai-photo-item" data-seed="${seed}">
-                        <div class="cm-spinner" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:24px; height:24px; border-width:2px; border-top-color:#7c6fff;"></div>
-                        <img src="https://pollinations.ai/p/${encodedPrompt}?width=1080&height=1350&seed=${Math.floor(Math.random()*1000000)}&nologo=true" 
-                             style="opacity:0; transition:opacity 0.4s;" 
-                             onload="this.style.opacity='1'; this.previousElementSibling.remove();">
-                        <div class="ai-item-overlay">Draft #${seed}</div>
-                    </div>
-                `).join('')}
+            <div class="ai-single-preview" id="AI-PREVIEW-WRAP">
+                <div class="cm-spinner" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:32px; height:32px; border-width:3px;"></div>
+                <img id="AI-IMG" src="${generateUrl()}" onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';" style="opacity:0; transition:opacity 0.4s;">
+            </div>
+
+            <div style="display:flex; justify-content:center; margin-bottom:20px;">
+                <button id="AI-TRY-ANOTHER" class="ai-try-another-btn">
+                    🔄 Try Another Variant
+                </button>
             </div>
             
             <div class="ai-grid-footer">
-                <button id="AI-USE-GALLERY" class="cm-btn-secondary" style="font-size:0.75rem; padding:10px 16px; min-width:120px;">📂 Backend Gallery</button>
+                <button id="AI-USE-GALLERY" class="cm-btn-secondary" style="font-size:0.75rem; padding:10px 16px;">📂 Backend Gallery</button>
                 <div style="flex-grow:1;"></div>
-                <button id="AI-CONFIRM" class="cm-btn-download" style="font-size:0.8rem; padding:10px 20px; display:none; background:#43d08a; border-color:#43d08a; color:#fff;">Confirm Selection</button>
+                <button id="AI-CONFIRM" class="cm-btn-download" style="font-size:0.85rem; padding:10px 24px; background:#43d08a; border-color:#43d08a; color:#fff;">Apply This Photo</button>
             </div>
         `;
         this.overlay.querySelector('div').appendChild(overlay);
 
-        let selectedUrl = '';
-        const items = overlay.querySelectorAll('.ai-photo-item');
-        items.forEach(item => {
-            item.onclick = () => {
-                items.forEach(i => i.classList.remove('selected'));
-                item.classList.add('selected');
-                selectedUrl = item.querySelector('img').src;
-                document.getElementById('AI-CONFIRM').style.display = 'block';
-            };
-        });
+        const img = document.getElementById('AI-IMG');
+        const spinner = overlay.querySelector('.cm-spinner');
+
+        document.getElementById('AI-TRY-ANOTHER').onclick = () => {
+            img.style.opacity = '0';
+            spinner.style.display = 'block';
+            img.src = generateUrl();
+        };
 
         document.getElementById('AI-CLOSE').onclick = () => overlay.remove();
         
@@ -1388,12 +1409,11 @@ const ContentUI = {
 
         document.getElementById('AI-CONFIRM').onclick = async () => {
             overlay.remove();
-            this.selectedImage = selectedUrl;
+            this.selectedImage = img.src;
             this.updatePhotoUI();
-            this.showFeedback("✨ AI Photo Selected!");
+            this.showFeedback("✨ AI Photo Applied!");
             if (platform) {
                 await this.captureAndDownload();
-                // Wait for download to start then share
                 setTimeout(() => this.executeSocialShare(platform), 2500);
             }
         };
