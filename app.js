@@ -1349,18 +1349,19 @@ const ContentUI = {
         const text = this.variants[this.currentIndex] || '';
         const coreTopic = text.split('.')[0].replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 80);
         
-        const generateUrl = (retryCount = 0) => {
+        let providerIndex = 0;
+        const providers = ['ai', 'real'];
+        
+        const generateUrl = (idx) => {
             const seed = Math.floor(Math.random() * 1000000);
-            // Clean title for URLs
             const cleanTitle = title.replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 40);
-            const cleanTopic = coreTopic.split(' ').slice(0, 5).join(' '); // Keep it short
+            const cleanTopic = coreTopic.split(' ').slice(0, 5).join(' ');
             
-            // Alternate between providers based on retryCount
-            if (retryCount % 2 === 0) {
-                const prompt = `${cleanTitle} celebration background, ${cleanTopic}, artistic, 4k`;
-                return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true`;
+            if (providers[idx % providers.length] === 'ai') {
+                const prompt = `${cleanTitle} celebration backdrop, ${cleanTopic}, artistic, 4k`;
+                // Revert to stable .ai/p/ endpoint
+                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true`;
             } else {
-                // Fallback to LoremFlickr for real photos (Unsplash/CC)
                 return `https://loremflickr.com/1080/1350/${encodeURIComponent(cleanTitle + ',' + cleanTopic)}?lock=${seed}`;
             }
         };
@@ -1383,7 +1384,7 @@ const ContentUI = {
                 </div>
                 <img id="AI-IMG" src="${generateUrl(0)}" 
                      onload="this.style.opacity='1'; document.getElementById('AI-SPINNER').style.display='none'; document.getElementById('AI-ERROR').style.display='none';" 
-                     onerror="window._aiRetryCount = (window._aiRetryCount || 0) + 1; if(window._aiRetryCount < 3) { this.src = generateUrl(window._aiRetryCount); } else { document.getElementById('AI-SPINNER').style.display='none'; document.getElementById('AI-ERROR').style.display='block'; this.style.display='none'; }"
+                     onerror="providerIndex++; console.warn('Fallback triggered'); if(providerIndex < 4) { this.src = generateUrl(providerIndex); } else { document.getElementById('AI-SPINNER').style.display='none'; document.getElementById('AI-ERROR').style.display='block'; this.style.display='none'; }"
                      style="opacity:0; transition:opacity 0.4s;">
             </div>
 
@@ -1406,13 +1407,13 @@ const ContentUI = {
         const errorMsg = document.getElementById('AI-ERROR');
 
         document.getElementById('AI-TRY-ANOTHER').onclick = () => {
-            window._aiRetryCount = (window._aiRetryCount || 0) + 1;
+            providerIndex++;
             img.style.opacity = '0';
             img.style.display = 'block';
             spinner.style.display = 'block';
             errorMsg.style.display = 'none';
-            img.src = generateUrl(window._aiRetryCount);
-            console.info("✨ Photo Provider Switch Layer:", window._aiRetryCount % 2 === 0 ? "AI" : "Real Photo");
+            img.src = generateUrl(providerIndex);
+            console.info("✨ Switch Layer:", providers[providerIndex % providers.length]);
         };
 
         document.getElementById('AI-CLOSE').onclick = () => overlay.remove();
