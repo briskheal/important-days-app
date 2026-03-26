@@ -160,6 +160,7 @@ app.get('/login', (req, res) => {
 });
 
 app.use(express.static(__dirname));
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // ── EMAIL CONFIGURATION (Google Apps Script Bridge via Axios) ────
 async function sendEmail({ to, subject, text, html }) {
@@ -693,80 +694,156 @@ app.post('/api/notify-status', async (req, res) => {
 // 12. SMART AI CONTENT
 app.get('/api/content', async (req, res) => {
     try {
-        const { date: mmdd, name, category } = req.query;
-        let variants = [];
-        let hashtags = "";
-        let cta = "";
-
+        const { name, category } = req.query;
         if (!name) return res.status(400).json({ error: "Missing name" });
 
         console.log(`[INFO] Generating content for: ${name} (${category})`);
 
-        // Variant 1: Template-based
-        let templateContent = "";
-        switch (category) {
-            case "Festival":
-                templateContent = `✨ Happy ${name}! Celebrate this beautiful festival with your loved ones. Spread joy, happiness, and traditional values today!`;
-                hashtags = `#${(name||'').replace(/\s/g, '')} #Festival #Joy #Celebration #FestiveVibes`;
-                cta = `🎈 Share the festive spirit with everyone!`;
-                break;
-            case "Health":
-                templateContent = `💪 Today is ${name}. Health is your greatest wealth. Let's take a pledge to stay fit, stay aware, and build a healthier future together!`;
-                hashtags = `#${(name||'').replace(/\s/g, '')} #Health #Wellness #Awareness #HealthyLiving`;
-                cta = `💙 Spread health awareness and inspire others!`;
-                break;
-            case "India-National":
-                templateContent = `🇮🇳 Observing ${name}. Proud of our heritage and the values this day represents. A time to reflect on our history and future. Jai Hind!`;
-                hashtags = `#${(name||'').replace(/\s/g, '')} #India #NationalPride #Heritage #Bharat #JaiHind`;
-                cta = `🇮🇳 Share with pride and honor!`;
-                break;
-            default:
-                templateContent = `📅 Today is ${name}. An important day to reflect on the values and awareness it brings to our lives and society globally.`;
-                hashtags = `#${(name||'').replace(/\s/g, '')} #ImportantDay #Awareness #Knowledge #Significance`;
-                cta = `✨ Share this knowledge and spread importance!`;
-        }
-        variants.push(templateContent);
+        let variants = [];
+        let hashtags = "";
+        let cta = "";
+        let isAi = false;
 
-        // Variant 2: Generic Awareness / Educational
-        variants.push(`🔍 Did you know today is ${name}? It's a day dedicated to raising awareness, celebrating milestones, and understanding the deep significance of this event. Let's make a positive impact together by sharing the word!`);
+        const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
-        // Variant 3: Global Impact & Legacy
-        variants.push(`🌍 ${name} is more than just a date on the calendar; it's a testament to our global heritage and the ongoing efforts to create a better world. Its legacy inspires us to continue advocate for positive change and community strength.`);
+        // --- Step 1: Attempt Claude AI Content ---
+        if (ANTHROPIC_API_KEY && !ANTHROPIC_API_KEY.includes('your_anthropic_key')) {
+            try {
+                console.log(`[AI] Requesting Claude 3.5 Haiku for: ${name}`);
+                const aiResponse = await axios.post('https://api.anthropic.com/v1/messages', {
+                    model: "claude-3-5-haiku-20241022",
+                    max_tokens: 1000,
+                    messages: [{
+                        role: "user",
+                        content: `Generate social media awareness content for an observance called "${name}" (Category: ${category}). 
+                        
+                        Give me exactly 4 variants:
+                        1. PROFESSIONAL: Informative and formal for LinkedIn/X.
+                        2. EMOTIONAL: Heartfelt and personal for WhatsApp/Facebook.
+                        3. SHORT: Concise, punchy, and modern for Instagram/SMS.
+                        4. CREATIVE: A fun, unique, or storytelling perspective.
 
-        // Variant 4: Wikipedia-based (Rich Content)
-        try {
-            const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name.replace(/ /g, "_"))}`;
-            const wikiRes = await axios.get(wikiUrl, {
-                headers: { 'User-Agent': 'ImportantDaysApp/1.5 (https://important-days.onrender.com; contact@example.com)' },
-                timeout: 5000
-            });
-            const wikiData = wikiRes.data;
-            if (wikiData && wikiData.extract) {
-                // Sanitize and trim
-                let summary = wikiData.extract.trim();
-                if (summary.length > 500) summary = summary.substring(0, 497) + "...";
-                variants.push(summary);
-                console.log(`[OK] Wikipedia content added for ${name}`);
+                        Also provide:
+                        - A set of 5 relevant hashtags.
+                        - A compelling Call to Action (CTA).
+
+                        FORMAT YOUR RESPONSE AS JSON:
+                        {
+                          "variants": ["var1", "var2", "var3", "var4"],
+                          "hashtags": "#tag1 #tag2...",
+                          "cta": "your cta here"
+                        }`
+                    }]
+                }, {
+                    headers: {
+                        'x-api-key': ANTHROPIC_API_KEY,
+                        'anthropic-version': '2023-06-01',
+                        'content-type': 'application/json'
+                    },
+                    timeout: 8000
+                });
+
+                if (aiResponse.data && aiResponse.data.content && aiResponse.data.content[0]) {
+                    const aiRaw = aiResponse.data.content[0].text;
+                    const aiData = JSON.parse(aiRaw.substring(aiRaw.indexOf('{'), aiRaw.lastIndexOf('}') + 1));
+                    
+                    if (aiData.variants && aiData.variants.length >= 4) {
+                        variants = aiData.variants;
+                        hashtags = aiData.hashtags;
+                        cta = aiData.cta;
+                        isAi = true;
+                        console.log(`[OK] Claude AI content generated for ${name}`);
+                    }
+                }
+            } catch (aiErr) {
+                console.warn(`[WARN] Claude AI failed: ${aiErr.message}. Falling back to templates.`);
             }
-        } catch (e) {
-            console.warn(`[WARN] Wiki fetch failed for ${name}: ${e.message}`);
-            // Fallback for Variant 4 if Wiki fails
-            variants.push(`🌟 Let's take a moment to acknowledge the importance of ${name}. Whether it's through learning more about its history or sharing its values with others, every small action counts in making this day meaningful.`);
         }
 
-        // Ensure we always have at least 4 variants
-        while (variants.length < 4) {
-            variants.push(`🌈 Celebrating ${name} today! A perfect opportunity to learn, grow, and share the significance of this special observance with your network.`);
+        // --- Step 2: Fallback Logic (Templates & Wikipedia) ---
+        if (!isAi) {
+            // Variant 1: Template-based
+            let templateContent = "";
+            switch (category) {
+                case "Festival":
+                    templateContent = `✨ Happy ${name}! Celebrate this beautiful festival with your loved ones. Spread joy, happiness, and traditional values today!`;
+                    hashtags = `#${(name || '').replace(/\s/g, '')} #Festival #Joy #Celebration #FestiveVibes`;
+                    cta = `🎈 Share the festive spirit with everyone!`;
+                    break;
+                case "Health":
+                    templateContent = `💪 Today is ${name}. Health is your greatest wealth. Let's take a pledge to stay fit, stay aware, and build a healthier future together!`;
+                    hashtags = `#${(name || '').replace(/\s/g, '')} #Health #Wellness #Awareness #HealthyLiving`;
+                    cta = `💙 Spread health awareness and inspire others!`;
+                    break;
+                case "India-National":
+                    templateContent = `🇮🇳 Observing ${name}. Proud of our heritage and the values this day represents. A time to reflect on our history and future. Jai Hind!`;
+                    hashtags = `#${(name || '').replace(/\s/g, '')} #India #NationalPride #Heritage #Bharat #JaiHind`;
+                    cta = `🇮🇳 Share with pride and honor!`;
+                    break;
+                default:
+                    templateContent = `📅 Today is ${name}. An important day to reflect on the values and awareness it brings to our lives and society globally.`;
+                    hashtags = `#${(name || '').replace(/\s/g, '')} #ImportantDay #Awareness #Knowledge #Significance`;
+                    cta = `✨ Share this knowledge and spread importance!`;
+            }
+            variants.push(templateContent);
+
+            // Variant 2: Generic Awareness / Educational
+            variants.push(`🔍 Did you know today is ${name}? It's a day dedicated to raising awareness, celebrating milestones, and understanding the deep significance of this event. Let's make a positive impact together by sharing the word!`);
+
+            // Variant 3: Global Impact & Legacy
+            variants.push(`🌍 ${name} is more than just a date on the calendar; it's a testament to our global heritage and the ongoing efforts to create a better world. Its legacy inspires us to continue advocate for positive change and community strength.`);
+
+            // Variant 4: Wikipedia-based (Rich Content)
+            try {
+                const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name.replace(/ /g, "_"))}`;
+                const wikiRes = await axios.get(wikiUrl, {
+                    headers: { 'User-Agent': 'ImportantDaysApp/1.5 (https://important-days.onrender.com; contact@example.com)' },
+                    timeout: 5000
+                });
+                const wikiData = wikiRes.data;
+                if (wikiData && wikiData.extract) {
+                    let summary = wikiData.extract.trim();
+                    if (summary.length > 500) summary = summary.substring(0, 497) + "...";
+                    variants.push(summary);
+                    console.log(`[OK] Wikipedia content added for ${name}`);
+                }
+            } catch (e) {
+                console.warn(`[WARN] Wiki fetch failed for ${name}: ${e.message}`);
+                variants.push(`🌟 Let's take a moment to acknowledge the importance of ${name}. Whether it's through learning more about its history or sharing its values with others, every small action counts in making this day meaningful.`);
+            }
+
+            // Ensure we always have at least 4 variants
+            while (variants.length < 4) {
+                variants.push(`🌈 Celebrating ${name} today! A perfect opportunity to learn, grow, and share the significance of this special observance with your network.`);
+            }
         }
 
         // Add a freeSnippet for the Quick Fact section in app.js
         const freeSnippet = variants[0];
 
-        res.json({ status: "success", variants, hashtags, cta, freeSnippet, isAi: true });
+        res.json({ status: "success", variants, hashtags, cta, freeSnippet, isAi });
     } catch (err) {
         console.error("AI Content Error:", err);
         res.status(500).json({ error: "Failed to generate content" });
     }
+});
+
+
+// 13. BACKEND GALLERY API
+app.get('/api/gallery', (req, res) => {
+    const galleryPath = path.join(__dirname, 'public', 'gallery');
+    if (!fs.existsSync(galleryPath)) {
+        return res.json([]);
+    }
+    fs.readdir(galleryPath, (err, files) => {
+        if (err) {
+            console.error("Gallery Read Error:", err);
+            return res.status(500).json({ error: "Failed to read gallery" });
+        }
+        // Filter for images only
+        const images = files.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f));
+        res.json(images.map(f => `/public/gallery/${f}`));
+    });
 });
 
 // 13. RESET DATABASE (Protected)

@@ -868,6 +868,66 @@ if (todayEvts.length > 0) {
 }
 
 // ── Dynamic Premium Content Modal ───────────
+const GalleryUI = {
+    overlay: null,
+    grid: null,
+    onSelect: null,
+    init() {
+        if (this.overlay) return;
+        this.overlay = document.createElement('div');
+        this.overlay.id = 'gallery-overlay';
+        this.overlay.innerHTML = `
+            <div class="gallery-container">
+                <div class="gallery-header">
+                    <h3 style="margin:0; font-family:'Outfit',sans-serif;">📁 Backend Gallery</h3>
+                    <button class="gallery-close" onclick="GalleryUI.hide()">✕</button>
+                </div>
+                <div id="gallery-grid" class="gallery-grid">
+                    <p style="grid-column: 1/-1; text-align:center; opacity:0.5;">Loading images...</p>
+                </div>
+                <div style="padding:15px; border-top:1px solid rgba(255,255,255,0.05); text-align:center;">
+                    <p style="font-size:0.75rem; color:var(--text-secondary); margin:0;">Tip: Add your own images to <code>/public/gallery</code> folder</p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(this.overlay);
+        this.grid = document.getElementById('gallery-grid');
+        this.overlay.onclick = (e) => { if (e.target === this.overlay) this.hide(); };
+    },
+    async show(callback) {
+        this.init();
+        this.onSelect = callback;
+        this.overlay.style.display = 'flex';
+        this.grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; opacity:0.5;">Loading images...</p>';
+        
+        try {
+            const res = await fetch(getApiUrl('/api/gallery'));
+            const images = await res.json();
+            
+            if (!images || images.length === 0) {
+                this.grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; opacity:0.5;">No images found in gallery.<br><br><span style="font-size:0.7rem;">Please add images to <code>/public/gallery</code></span></p>';
+                return;
+            }
+            
+            this.grid.innerHTML = images.map(url => `
+                <div class="gallery-item" onclick="GalleryUI.select('${url}')">
+                    <img src="${getApiUrl(url)}" alt="Gallery Image">
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error("Gallery Fetch Error:", e);
+            this.grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#f87171;">Failed to load gallery.</p>';
+        }
+    },
+    hide() {
+        if (this.overlay) this.overlay.style.display = 'none';
+    },
+    select(url) {
+        if (this.onSelect) this.onSelect(url);
+        this.hide();
+    }
+};
+
 const ContentUI = {
     overlay: null,
     title: null,
@@ -876,6 +936,8 @@ const ContentUI = {
     refreshBtn: null,
     variants: [],
     currentIndex: 0,
+    selectedImage: null,
+    withPhoto: true,
     init() {
         console.log("ContentUI: Initializing...");
         if (this.overlay) {
@@ -903,7 +965,33 @@ const ContentUI = {
                         <button id="DCM-CLOSE" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#9ca3af; width:36px; height:36px; border-radius:50%; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; transition:0.2s;">✕</button>
                     </div>
                 </div>
-                <div id="DCM-BODY" style="padding:16px 20px; line-height:1.6; font-size:0.95rem; color:#d1d5db; height:280px; overflow-y:auto; scrollbar-width:thin;"></div>
+                <div id="DCM-BODY" style="padding:16px 20px; line-height:1.6; font-size:0.95rem; color:#d1d5db; height:240px; overflow-y:auto; scrollbar-width:thin;"></div>
+                
+                <!-- Image Preview Section -->
+                <div id="DCM-IMAGE-SECTION" style="padding:0 20px; display:none;">
+                    <div class="cm-image-preview-container">
+                        <img id="DCM-PREVIEW" class="cm-image-preview" src="" alt="Post Preview">
+                        <div id="DCM-PREVIEW-PLACEHOLDER" style="font-size:0.8rem; opacity:0.5;">No Image Selected</div>
+                    </div>
+                </div>
+
+                <div class="cm-image-controls" style="padding:0 20px;">
+                    <button id="DCM-TOGGLE-PHOTO" class="cm-btn-secondary" title="Toggle Photo">
+                        <span id="DCM-PHOTO-ICON">🖼️</span> <span id="DCM-PHOTO-TEXT">With Photo</span>
+                    </button>
+                    <button id="DCM-OPEN-GALLERY" class="cm-btn-secondary" style="display:none;">
+                        📁 Gallery
+                    </button>
+                    <button id="DCM-UPLOAD-PHOTO" class="cm-btn-secondary" style="display:none;">
+                        📤 Upload
+                    </button>
+                </div>
+                
+                <div id="DCM-DOWNLOAD-WRAP" style="padding:0 20px; display:none;">
+                    <button id="DCM-DOWNLOAD-BTN" class="cm-btn-download">
+                        📥 Download Image for Sharing
+                    </button>
+                </div>
                 <!-- Feedback Message -->
                 <div style="text-align:center; height:20px; margin-bottom:4px; margin-top:12px;">
                     <span id="DCM-FEEDBACK" style="font-size:0.8rem; color:#43d08a; font-weight:600; opacity:0; transition:0.3s; display:inline-block;">Copied!</span>
@@ -935,6 +1023,48 @@ const ContentUI = {
 
         document.getElementById('DCM-CLOSE').onclick = () => this.hide();
         this.overlay.onclick = (e) => { if (e.target === this.overlay) this.hide(); };
+
+        // Image Selection Handlers
+        document.getElementById('DCM-TOGGLE-PHOTO').onclick = () => {
+            this.withPhoto = !this.withPhoto;
+            this.updatePhotoUI();
+        };
+
+        document.getElementById('DCM-OPEN-GALLERY').onclick = () => {
+            GalleryUI.show((url) => {
+                this.selectedImage = url;
+                this.updatePhotoUI();
+            });
+        };
+
+        document.getElementById('DCM-UPLOAD-PHOTO').onclick = () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (re) => {
+                        this.selectedImage = re.target.result;
+                        this.updatePhotoUI();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        };
+
+        document.getElementById('DCM-DOWNLOAD-BTN').onclick = () => {
+            if (!this.selectedImage) return;
+            const link = document.createElement('a');
+            link.href = getApiUrl(this.selectedImage);
+            link.download = `ImportantDay_${new Date().getTime()}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            this.showFeedback("✅ Image Downloaded! Now share on Instagram.");
+        };
 
         const getShareText = () => this.variants[this.currentIndex] || (typeof _lastContentText !== 'undefined' ? _lastContentText : '');
 
@@ -1100,6 +1230,43 @@ const ContentUI = {
 
             if (this.refreshBtn) this.refreshBtn.style.display = (this.variants.length > 1) ? 'flex' : 'none';
             _lastContentText = text;
+            this.updatePhotoUI();
+        }
+    },
+    updatePhotoUI() {
+        const section = document.getElementById('DCM-IMAGE-SECTION');
+        const preview = document.getElementById('DCM-PREVIEW');
+        const placeholder = document.getElementById('DCM-PREVIEW-PLACEHOLDER');
+        const galleryBtn = document.getElementById('DCM-OPEN-GALLERY');
+        const uploadBtn = document.getElementById('DCM-UPLOAD-PHOTO');
+        const toggleIcon = document.getElementById('DCM-PHOTO-ICON');
+        const toggleText = document.getElementById('DCM-PHOTO-TEXT');
+        const downloadWrap = document.getElementById('DCM-DOWNLOAD-WRAP');
+
+        if (this.withPhoto) {
+            section.style.display = 'block';
+            galleryBtn.style.display = 'flex';
+            uploadBtn.style.display = 'flex';
+            toggleIcon.textContent = '🖼️';
+            toggleText.textContent = 'With Photo';
+            
+            if (this.selectedImage) {
+                preview.src = getApiUrl(this.selectedImage);
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                downloadWrap.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+                placeholder.style.display = 'block';
+                downloadWrap.style.display = 'none';
+            }
+        } else {
+            section.style.display = 'none';
+            galleryBtn.style.display = 'none';
+            uploadBtn.style.display = 'none';
+            toggleIcon.textContent = '🚫';
+            toggleText.textContent = 'No Photo';
+            downloadWrap.style.display = 'none';
         }
     },
     showFeedback(msg, duration = 4000) {
