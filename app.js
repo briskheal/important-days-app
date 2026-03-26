@@ -941,10 +941,13 @@ const ContentUI = {
     withPhoto: true,
     init() {
         console.log("ContentUI: Initializing...");
-        if (this.overlay) {
-            console.log("ContentUI: Overlay already exists.");
+        const existing = document.getElementById('dynamic-content-modal');
+        if (existing && document.getElementById('DCM-AI-GENERATE')) {
+            this.overlay = existing;
             return;
         }
+        if (existing) existing.remove();
+
         this.overlay = document.createElement('div');
         this.overlay.id = 'dynamic-content-modal';
         this.overlay.style.cssText = `
@@ -982,18 +985,21 @@ const ContentUI = {
                     </div>
                 </div>
 
-                <div class="cm-image-controls" style="padding:0 20px; display:flex; gap:10px; flex-wrap:wrap;">
-                    <button id="DCM-TOGGLE-PHOTO" class="cm-btn-secondary" title="Toggle Photo">
-                        <span id="DCM-PHOTO-ICON">🖼️</span> <span id="DCM-PHOTO-TEXT">With Photo</span>
+                <div class="cm-image-controls" style="padding:0 20px; display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+                    <button id="DCM-TOGGLE-PHOTO" class="cm-btn-secondary" title="Toggle Photo Section" style="flex:0; padding:10px;">
+                        <span id="DCM-PHOTO-ICON">🖼️</span> <span id="DCM-PHOTO-TEXT" style="display:none;">With Photo</span>
                     </button>
-                    <button id="DCM-OPEN-GALLERY" class="cm-btn-secondary" style="display:none; flex:1;">
+                    <button id="DCM-AI-GENERATE" class="cm-btn-secondary" style="background:rgba(124,111,255,0.2); border-color:rgba(124,111,255,0.4); color:#a78bfa; flex:1.2; min-width:110px; font-weight:700; display:none; border-width:2px;">
+                        ✨ AI Photos
+                    </button>
+                    <button id="DCM-OPEN-GALLERY" class="cm-btn-secondary" style="display:none; flex:1; min-width:80px;">
                         📁 Gallery
                     </button>
-                    <button id="DCM-UPLOAD-PHOTO" class="cm-btn-secondary" style="display:none; flex:1;">
+                    <button id="DCM-UPLOAD-PHOTO" class="cm-btn-secondary" style="display:none; flex:1; min-width:80px;">
                         📤 Upload
                     </button>
-                    <button id="DCM-REMOVE-PHOTO" class="cm-btn-secondary" style="display:none; background:rgba(248,113,113,0.1); color:#f87171; border-color:rgba(248,113,113,0.2);">
-                        🗑️ Remove
+                    <button id="DCM-REMOVE-PHOTO" class="cm-btn-secondary" style="display:none; background:rgba(248,113,113,0.1); color:#f87171; border-color:rgba(248,113,113,0.2); flex:0; padding:10px;">
+                        🗑️
                     </button>
                 </div>
                 
@@ -1038,6 +1044,10 @@ const ContentUI = {
         document.getElementById('DCM-TOGGLE-PHOTO').onclick = () => {
             this.withPhoto = !this.withPhoto;
             this.updatePhotoUI();
+        };
+
+        document.getElementById('DCM-AI-GENERATE').onclick = () => {
+            this.showAiPhotoSelector();
         };
 
         document.getElementById('DCM-REMOVE-PHOTO').onclick = () => {
@@ -1369,8 +1379,10 @@ const ContentUI = {
             GalleryUI.show(async (url) => {
                 this.selectedImage = url;
                 this.updatePhotoUI();
-                await this.captureAndDownload();
-                setTimeout(() => this.executeSocialShare(platform), 2000);
+                if (platform) {
+                    await this.captureAndDownload();
+                    setTimeout(() => this.executeSocialShare(platform), 2000);
+                }
             });
         };
 
@@ -1379,9 +1391,11 @@ const ContentUI = {
             this.selectedImage = selectedUrl;
             this.updatePhotoUI();
             this.showFeedback("✨ AI Photo Selected!");
-            await this.captureAndDownload();
-            // Wait for download to start then share
-            setTimeout(() => this.executeSocialShare(platform), 2500);
+            if (platform) {
+                await this.captureAndDownload();
+                // Wait for download to start then share
+                setTimeout(() => this.executeSocialShare(platform), 2500);
+            }
         };
     },
     executeSocialShare(platform) {
@@ -1482,18 +1496,20 @@ const ContentUI = {
         const placeholder = document.getElementById('DCM-PREVIEW-PLACEHOLDER');
         const removeBtn = document.getElementById('DCM-REMOVE-PHOTO');
         const galleryBtn = document.getElementById('DCM-OPEN-GALLERY');
+        const aiBtn = document.getElementById('DCM-AI-GENERATE');
         const uploadBtn = document.getElementById('DCM-UPLOAD-PHOTO');
         const toggleIcon = document.getElementById('DCM-PHOTO-ICON');
         const toggleText = document.getElementById('DCM-PHOTO-TEXT');
         const downloadWrap = document.getElementById('DCM-DOWNLOAD-WRAP');
 
-        if (!section || !preview || !placeholder || !removeBtn || !galleryBtn || !uploadBtn || !toggleIcon || !toggleText || !downloadWrap) {
+        if (!section || !preview || !placeholder || !removeBtn || !galleryBtn || !aiBtn || !uploadBtn || !toggleIcon || !toggleText || !downloadWrap) {
             console.warn("ContentUI: Some photo UI elements missing from DOM");
             return;
         }
 
         if (this.withPhoto) {
             section.style.display = 'block';
+            aiBtn.style.display = 'flex';
             galleryBtn.style.display = 'flex';
             uploadBtn.style.display = 'flex';
             toggleIcon.textContent = '🖼️';
