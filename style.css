@@ -3759,20 +3759,30 @@ html {
 /* AI One-by-One Selector */
 .ai-single-preview {
     width: 100%;
-    aspect-ratio: 1080 / 1350;
+    height: 280px; /* Reduced height to keep buttons visible on one screen */
     background: rgba(0,0,0,0.2);
     border-radius: 16px;
     overflow: hidden;
     position: relative;
     border: 1px solid rgba(255,255,255,0.05);
     margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .ai-single-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Changed from cover to keep everything visible */
     display: block;
+}
+
+.ai-error-msg {
+    padding: 20px;
+    text-align: center;
+    color: #f87171;
+    font-size: 0.85rem;
 }
 
 .ai-try-another-btn {

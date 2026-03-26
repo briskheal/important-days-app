@@ -1366,8 +1366,15 @@ const ContentUI = {
             </div>
             
             <div class="ai-single-preview" id="AI-PREVIEW-WRAP">
-                <div class="cm-spinner" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:32px; height:32px; border-width:3px;"></div>
-                <img id="AI-IMG" src="${generateUrl()}" onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';" style="opacity:0; transition:opacity 0.4s;">
+                <div class="cm-spinner" id="AI-SPINNER" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:32px; height:32px; border-width:3px;"></div>
+                <div id="AI-ERROR" class="ai-error-msg" style="display:none;">
+                    <span style="font-size:1.5rem; display:block; margin-bottom:10px;">📉</span>
+                    Generation failed. Keep trying another variant or use your gallery.
+                </div>
+                <img id="AI-IMG" src="${generateUrl()}" 
+                     onload="this.style.opacity='1'; document.getElementById('AI-SPINNER').style.display='none'; document.getElementById('AI-ERROR').style.display='none';" 
+                     onerror="document.getElementById('AI-SPINNER').style.display='none'; document.getElementById('AI-ERROR').style.display='block'; this.style.display='none';"
+                     style="opacity:0; transition:opacity 0.4s;">
             </div>
 
             <div style="display:flex; justify-content:center; margin-bottom:20px;">
@@ -1385,11 +1392,14 @@ const ContentUI = {
         this.overlay.querySelector('div').appendChild(overlay);
 
         const img = document.getElementById('AI-IMG');
-        const spinner = overlay.querySelector('.cm-spinner');
+        const spinner = document.getElementById('AI-SPINNER');
+        const errorMsg = document.getElementById('AI-ERROR');
 
         document.getElementById('AI-TRY-ANOTHER').onclick = () => {
             img.style.opacity = '0';
+            img.style.display = 'block';
             spinner.style.display = 'block';
+            errorMsg.style.display = 'none';
             img.src = generateUrl();
         };
 
