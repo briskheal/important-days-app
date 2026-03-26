@@ -1349,10 +1349,20 @@ const ContentUI = {
         const text = this.variants[this.currentIndex] || '';
         const coreTopic = text.split('.')[0].replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 80);
         
-        const generateUrl = () => {
+        const generateUrl = (retryCount = 0) => {
             const seed = Math.floor(Math.random() * 1000000);
-            const prompt = `Professional minimalist artistic background for ${title}, theme of ${coreTopic}, cinematic lighting, 4k, post style`;
-            return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true`;
+            // Clean title for URLs
+            const cleanTitle = title.replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 40);
+            const cleanTopic = coreTopic.split(' ').slice(0, 5).join(' '); // Keep it short
+            
+            // Alternate between providers based on retryCount
+            if (retryCount % 2 === 0) {
+                const prompt = `${cleanTitle} celebration background, ${cleanTopic}, artistic, 4k`;
+                return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true`;
+            } else {
+                // Fallback to LoremFlickr for real photos (Unsplash/CC)
+                return `https://loremflickr.com/1080/1350/${encodeURIComponent(cleanTitle + ',' + cleanTopic)}?lock=${seed}`;
+            }
         };
 
         const overlay = document.createElement('div');
@@ -1371,9 +1381,9 @@ const ContentUI = {
                     <span style="font-size:1.5rem; display:block; margin-bottom:10px;">📉</span>
                     Generation failed. Keep trying another variant or use your gallery.
                 </div>
-                <img id="AI-IMG" src="${generateUrl()}" 
+                <img id="AI-IMG" src="${generateUrl(0)}" 
                      onload="this.style.opacity='1'; document.getElementById('AI-SPINNER').style.display='none'; document.getElementById('AI-ERROR').style.display='none';" 
-                     onerror="document.getElementById('AI-SPINNER').style.display='none'; document.getElementById('AI-ERROR').style.display='block'; this.style.display='none';"
+                     onerror="window._aiRetryCount = (window._aiRetryCount || 0) + 1; if(window._aiRetryCount < 3) { this.src = generateUrl(window._aiRetryCount); } else { document.getElementById('AI-SPINNER').style.display='none'; document.getElementById('AI-ERROR').style.display='block'; this.style.display='none'; }"
                      style="opacity:0; transition:opacity 0.4s;">
             </div>
 
@@ -1396,11 +1406,13 @@ const ContentUI = {
         const errorMsg = document.getElementById('AI-ERROR');
 
         document.getElementById('AI-TRY-ANOTHER').onclick = () => {
+            window._aiRetryCount = (window._aiRetryCount || 0) + 1;
             img.style.opacity = '0';
             img.style.display = 'block';
             spinner.style.display = 'block';
             errorMsg.style.display = 'none';
-            img.src = generateUrl();
+            img.src = generateUrl(window._aiRetryCount);
+            console.info("✨ Photo Provider Switch Layer:", window._aiRetryCount % 2 === 0 ? "AI" : "Real Photo");
         };
 
         document.getElementById('AI-CLOSE').onclick = () => overlay.remove();
