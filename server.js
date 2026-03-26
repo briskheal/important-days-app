@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer');
 
 const mongoose = require('mongoose');
 const axios = require('axios');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 8083;
@@ -159,8 +160,51 @@ app.get('/login', (req, res) => {
     res.redirect('/login.html');
 });
 
-app.use(express.static(__dirname));
-app.use('/public', express.static(path.join(__dirname, 'public')));
+const staticOptions = {
+    setHeaders: (res) => {
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    }
+};
+
+app.use(express.static(__dirname, staticOptions));
+app.use('/public', express.static(path.join(__dirname, 'public'), staticOptions));
+
+// ── PHOTO UPLOAD CONFIGURATION (Multer) ──────────
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = path.join(__dirname, 'public', 'gallery');
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+        cb(null, 'upload-' + uniqueSuffix + ext);
+    }
+});
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) cb(null, true);
+        else cb(new Error('Only images are allowed'));
+    }
+});
+
+app.post('/api/upload-photo', upload.single('photo'), (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const filePath = `/public/gallery/${req.file.filename}`;
+        console.log(`[OK] Photo uploaded: ${filePath}`);
+        res.json({ status: 'success', url: filePath });
+    } catch (err) {
+        console.error("Upload error:", err);
+        res.status(500).json({ error: 'Upload failed' });
+    }
+});
 
 // ── EMAIL CONFIGURATION (Google Apps Script Bridge via Axios) ────
 async function sendEmail({ to, subject, text, html }) {

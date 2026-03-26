@@ -12,6 +12,7 @@ window.normPhone = function(p) {
 
 // ── API URL Helper ──────────────────
 function getApiUrl(path) {
+    if (!path || path.startsWith('data:')) return path;
     if (window.location.protocol === 'file:') {
         return `http://localhost:8083${path}`;
     }
@@ -898,14 +899,14 @@ const GalleryUI = {
         this.init();
         this.onSelect = callback;
         this.overlay.style.display = 'flex';
-        this.grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; opacity:0.5;">Loading images...</p>';
+        this.grid.innerHTML = '<div class="gallery-loading-pulse">⏳ Loading high-quality gallery... Please wait.</div>';
         
         try {
             const res = await fetch(getApiUrl('/api/gallery'));
             const images = await res.json();
             
             if (!images || images.length === 0) {
-                this.grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; opacity:0.5;">No images found in gallery.<br><br><span style="font-size:0.7rem;">Please add images to <code>/public/gallery</code></span></p>';
+                this.grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; opacity:0.5; padding:40px;">No images found in gallery.<br><br><span style="font-size:0.7rem;">Please add images to <code>/public/gallery</code></span></p>';
                 return;
             }
             
@@ -965,7 +966,13 @@ const ContentUI = {
                         <button id="DCM-CLOSE" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#9ca3af; width:36px; height:36px; border-radius:50%; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; transition:0.2s;">✕</button>
                     </div>
                 </div>
-                <div id="DCM-BODY" style="padding:16px 20px; line-height:1.6; font-size:0.95rem; color:#d1d5db; height:240px; overflow-y:auto; scrollbar-width:thin;"></div>
+                <div class="cm-scroll-container">
+                    <div id="DCM-BODY" style="padding:16px 20px; line-height:1.6; font-size:0.95rem; color:#d1d5db; height:240px; overflow-y:auto; scrollbar-width:thin; position:relative; scroll-behavior:smooth;"></div>
+                    <div class="cm-scroll-btns">
+                        <button id="DCM-SCROLL-UP" class="cm-scroll-btn" title="Scroll Up">▲</button>
+                        <button id="DCM-SCROLL-DOWN" class="cm-scroll-btn" title="Scroll Down">▼</button>
+                    </div>
+                </div>
                 
                 <!-- Image Preview Section -->
                 <div id="DCM-IMAGE-SECTION" style="padding:0 20px; display:none;">
@@ -975,15 +982,18 @@ const ContentUI = {
                     </div>
                 </div>
 
-                <div class="cm-image-controls" style="padding:0 20px;">
+                <div class="cm-image-controls" style="padding:0 20px; display:flex; gap:10px; flex-wrap:wrap;">
                     <button id="DCM-TOGGLE-PHOTO" class="cm-btn-secondary" title="Toggle Photo">
                         <span id="DCM-PHOTO-ICON">🖼️</span> <span id="DCM-PHOTO-TEXT">With Photo</span>
                     </button>
-                    <button id="DCM-OPEN-GALLERY" class="cm-btn-secondary" style="display:none;">
+                    <button id="DCM-OPEN-GALLERY" class="cm-btn-secondary" style="display:none; flex:1;">
                         📁 Gallery
                     </button>
-                    <button id="DCM-UPLOAD-PHOTO" class="cm-btn-secondary" style="display:none;">
+                    <button id="DCM-UPLOAD-PHOTO" class="cm-btn-secondary" style="display:none; flex:1;">
                         📤 Upload
+                    </button>
+                    <button id="DCM-REMOVE-PHOTO" class="cm-btn-secondary" style="display:none; background:rgba(248,113,113,0.1); color:#f87171; border-color:rgba(248,113,113,0.2);">
+                        🗑️ Remove
                     </button>
                 </div>
                 
@@ -1002,10 +1012,10 @@ const ContentUI = {
                         💡 Tip: <a href="#" id="DCM-LINK-PROFILES" style="color:#7c6fff; text-decoration:none; border-bottom:1px dashed #7c6fff;">Link social profiles</a> for easier sharing
                     </p>
                     <div style="display:flex; align-items:center; gap:12px; justify-content:center; flex-wrap:wrap;">
-                        <button id="DCM-X" title="Share on X (Twitter)" style="background:#000; color:#fff; border:1px solid rgba(255,255,255,0.1); width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.9rem; transition:0.2s;">𝕏</button>
-                        <button id="DCM-FB" title="Share on Facebook" style="background:#1877F2; color:#fff; border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.9rem; transition:0.2s;">f</button>
-                        <button id="DCM-LI" title="Share on LinkedIn" style="background:#0077B5; color:#fff; border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.9rem; transition:0.2s;">in</button>
-                        <button id="DCM-IG" title="Share on Instagram" style="background:linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); color:#fff; border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.9rem; transition:0.2s;">📸</button>
+                        <button id="DCM-X" title="Share on X (Twitter)" style="background:#000; color:#fff; border:1px solid rgba(255,255,255,0.1); width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">𝕏</button>
+                        <button id="DCM-FB" title="Share on Facebook" style="background:#1877F2; color:#fff; border:none; width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">f</button>
+                        <button id="DCM-LI" title="Share on LinkedIn" style="background:#0077B5; color:#fff; border:none; width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">in</button>
+                        <button id="DCM-IG" title="Share on Instagram" style="background:linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); color:#fff; border:none; width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">📸</button>
                     </div>
                 </div>
                 <!-- Auto Post Button (Shown always, with warning if no links) -->
@@ -1030,6 +1040,12 @@ const ContentUI = {
             this.updatePhotoUI();
         };
 
+        document.getElementById('DCM-REMOVE-PHOTO').onclick = () => {
+            this.selectedImage = null;
+            this.updatePhotoUI();
+            this.showFeedback("🗑️ Photo removed from post.");
+        };
+
         document.getElementById('DCM-OPEN-GALLERY').onclick = () => {
             GalleryUI.show((url) => {
                 this.selectedImage = url;
@@ -1041,32 +1057,48 @@ const ContentUI = {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
-            input.onchange = (e) => {
+            input.onchange = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (re) => {
-                        this.selectedImage = re.target.result;
-                        this.updatePhotoUI();
-                    };
-                    reader.readAsDataURL(file);
+                    this.showFeedback("⏳ Uploading high-quality photo...", 10000);
+                    const formData = new FormData();
+                    formData.append('photo', file);
+                    
+                    try {
+                        const res = await fetch(getApiUrl('/api/upload-photo'), {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            this.selectedImage = data.url;
+                            this.updatePhotoUI();
+                            this.showFeedback("✅ Photo uploaded & saved to Gallery!");
+                        } else {
+                            throw new Error(data.error || 'Upload failed');
+                        }
+                    } catch (err) {
+                        console.error("Upload Error:", err);
+                        this.showFeedback("❌ Upload failed. Please try a smaller image.");
+                    }
                 }
             };
             input.click();
         };
 
         document.getElementById('DCM-DOWNLOAD-BTN').onclick = () => {
-            if (!this.selectedImage) return;
-            const link = document.createElement('a');
-            link.href = getApiUrl(this.selectedImage);
-            link.download = `ImportantDay_${new Date().getTime()}.jpg`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            this.showFeedback("✅ Image Downloaded! Now share on Instagram.");
+            this.captureAndDownload();
         };
 
         const getShareText = () => this.variants[this.currentIndex] || (typeof _lastContentText !== 'undefined' ? _lastContentText : '');
+
+        // Scroll handlers
+        document.getElementById('DCM-SCROLL-UP').onclick = () => {
+            this.body.scrollTop -= 60;
+        };
+        document.getElementById('DCM-SCROLL-DOWN').onclick = () => {
+            this.body.scrollTop += 60;
+        };
 
         this.refreshBtn.onclick = () => {
             if (this.variants.length > 1) {
@@ -1076,41 +1108,10 @@ const ContentUI = {
         };
 
         // Social Button Handlers
-        document.getElementById('DCM-X').onclick = () => {
-            const text = getShareText();
-            // Always use intent for composer (supports pre-fill)
-            const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-            window.open(intentUrl, '_blank');
-            this.showFeedback("✨ Copied! Compose box opened.");
-        };
-        document.getElementById('DCM-FB').onclick = () => {
-            const u = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
-            const url = window.location.origin + window.location.pathname;
-            const text = getShareText();
-            navigator.clipboard.writeText(text);
-            // Use saved link if available, else generic sharer
-            const target = u.fbLink || `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
-            window.open(target, '_blank');
-            this.showFeedback("📋 Copied! Now Paste (Ctrl+V) in Facebook.");
-        };
-        document.getElementById('DCM-LI').onclick = () => {
-            const u = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
-            const url = window.location.origin + window.location.pathname;
-            const text = getShareText();
-            navigator.clipboard.writeText(text);
-            // Use saved link if available, else generic sharer
-            const target = u.liLink || `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
-            window.open(target, '_blank');
-            this.showFeedback("📋 Copied! Now Paste (Ctrl+V) in LinkedIn.");
-        };
-        document.getElementById('DCM-IG').onclick = () => {
-            const u = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
-            const text = getShareText();
-            navigator.clipboard.writeText(text);
-            const target = u.igLink || 'https://www.instagram.com/';
-            window.open(target, '_blank');
-            this.showFeedback("📸 Copied! Now Paste (Ctrl+V) in Instagram.");
-        };
+        document.getElementById('DCM-X').onclick = () => this.startShareFlow('x');
+        document.getElementById('DCM-FB').onclick = () => this.startShareFlow('fb');
+        document.getElementById('DCM-LI').onclick = () => this.startShareFlow('li');
+        document.getElementById('DCM-IG').onclick = () => this.startShareFlow('ig');
 
         // Link to profile nudge
         const nudgeLink = document.getElementById('DCM-LINK-PROFILES');
@@ -1169,6 +1170,248 @@ const ContentUI = {
                     setTimeout(() => fb.style.opacity = '0', 8000);
                 }, delay + 1000);
             };
+        }
+    },
+    async captureAndDownload() {
+        if (!this.selectedImage || !this.body) return;
+        
+        this.showFeedback("🎨 Generating card...");
+        const text = this.variants[this.currentIndex] || "";
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        
+        img.onload = () => {
+            // High Resolution Setup
+            canvas.width = 1080;
+            canvas.height = 1350; // Portrait / Instagram size
+            
+            // Background Image (Cover style)
+            const imgRatio = img.width / img.height;
+            const canvasRatio = canvas.width / canvas.height;
+            let drawW, drawH, drawX, drawY;
+            if (imgRatio > canvasRatio) {
+                drawH = canvas.height;
+                drawW = canvas.height * imgRatio;
+                drawX = (canvas.width - drawW) / 2;
+                drawY = 0;
+            } else {
+                drawW = canvas.width;
+                drawH = canvas.width / imgRatio;
+                drawX = 0;
+                drawY = (canvas.height - drawH) / 2;
+            }
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            
+            // Overlay Gradient
+            const grad = ctx.createLinearGradient(0, canvas.height * 0.4, 0, canvas.height);
+            grad.addColorStop(0, "rgba(10, 12, 30, 0)");
+            grad.addColorStop(0.7, "rgba(10, 12, 30, 0.85)");
+            grad.addColorStop(1, "rgba(10, 12, 30, 0.98)");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // App Brand Line
+            ctx.fillStyle = "#7c6fff";
+            ctx.font = "800 24px 'Inter', sans-serif";
+            ctx.fillText("IMPORTANT DAYS APP", 60, canvas.height - 60);
+
+            // Awareness Text Rendering
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "500 36px 'Inter', sans-serif";
+            const maxWidth = canvas.width - 120;
+            const lineHeight = 50;
+            const x = 60;
+            
+            // Simple text wrapping (bottom-up)
+            const lines = [];
+            const paragraphs = text.split('\n');
+            paragraphs.reverse().forEach(p => {
+                if (!p.trim()) { lines.push(""); return; }
+                const words = p.split(' ');
+                let currentLine = "";
+                const pLines = [];
+                words.forEach(word => {
+                    const testLine = currentLine + word + " ";
+                    const metrics = ctx.measureText(testLine);
+                    if (metrics.width > maxWidth && currentLine.length > 0) {
+                        pLines.push(currentLine);
+                        currentLine = word + " ";
+                    } else {
+                        currentLine = testLine;
+                    }
+                });
+                pLines.push(currentLine);
+                pLines.reverse().forEach(l => lines.push(l));
+            });
+
+            // Calculate starting Y to draw lines upwards from bottom
+            let y = canvas.height - 140;
+            lines.slice(0, 18).forEach(line => {
+                ctx.fillText(line.trim(), x, y);
+                y -= lineHeight;
+            });
+
+            // Download trigger
+            try {
+                const dataUrl = canvas.toDataURL("image/png");
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = `ImportantDay_Post_${Date.now()}.png`;
+                link.click();
+                this.showFeedback("✅ Card Downloaded!");
+            } catch (e) {
+                console.error("Canvas export failed:", e);
+                this.showFeedback("❌ Browser blocked image creation. Downloading photo only.");
+                const link = document.createElement('a');
+                link.href = getApiUrl(this.selectedImage);
+                link.download = `Photo_${Date.now()}.jpg`;
+                link.click();
+            }
+        };
+        
+        img.onerror = () => {
+            this.showFeedback("❌ Failed to combine photo. Downloading separately.");
+            const link = document.createElement('a');
+            link.href = getApiUrl(this.selectedImage);
+            link.download = `Photo_${Date.now()}.jpg`;
+            link.click();
+        };
+
+        img.src = getApiUrl(this.selectedImage);
+    },
+    startShareFlow(platform) {
+        const overlay = document.createElement('div');
+        overlay.className = 'cm-share-prompt-overlay';
+        overlay.innerHTML = `
+            <div class="cm-share-prompt-card">
+                <div class="cm-share-prompt-title">🖼️ Add a Photo?</div>
+                <div class="cm-share-prompt-msg">Would you like to attach a high-quality photo card for this day or just the text?</div>
+                <div class="cm-share-prompt-btns">
+                    <button id="SPF-YES" class="cm-btn-download" style="margin:0; background:rgba(124,111,255,0.1); border-color:rgba(124,111,255,0.2); color:#a78bfa;">Yes, Choose Photo</button>
+                    <button id="SPF-NO" class="cm-btn-secondary" style="justify-content:center;">No, Only Text</button>
+                    <button id="SPF-CANCEL" style="background:transparent; border:none; color:#64748b; font-size:0.75rem; cursor:pointer; margin-top:5px;">Cancel</button>
+                </div>
+            </div>
+        `;
+        this.overlay.querySelector('div').appendChild(overlay);
+
+        const close = () => overlay.remove();
+        
+        document.getElementById('SPF-CANCEL').onclick = close;
+        
+        document.getElementById('SPF-NO').onclick = () => {
+            close();
+            this.executeSocialShare(platform);
+        };
+
+        document.getElementById('SPF-YES').onclick = () => {
+            close();
+            this.showAiPhotoSelector(platform);
+        };
+    },
+    showAiPhotoSelector(platform) {
+        const title = this.title?.textContent || 'Important Day';
+        const text = this.variants[this.currentIndex] || '';
+        // Clean prompt for better AI Generation
+        const coreTopic = text.split('.')[0].replace(/[^a-zA-Z0-9\s]/g, '').slice(0, 100);
+        const prompt = `Professional minimalist artistic background for ${title}, theme of ${coreTopic}, cinematic lighting, high resolution, 4k, post style`;
+        const encodedPrompt = encodeURIComponent(prompt);
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'ai-photo-selector-overlay';
+        overlay.innerHTML = `
+            <div class="ai-grid-header">
+                <div style="color:#7c6fff; font-weight:800; font-size:1rem; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.2rem;">✨</span> AI CONTENT DRAFTS
+                </div>
+                <button id="AI-CLOSE" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.5rem; padding:5px;">&times;</button>
+            </div>
+            <p style="font-size:0.8rem; color:#94a3b8; margin:0 0 20px 0; line-height:1.4;">Pick a content-matched photo or use your gallery. These are generated on-the-fly for this day.</p>
+            
+            <div class="ai-photo-grid" id="AI-PHOTO-GRID">
+                ${[1,2,3,4].map(seed => `
+                    <div class="ai-photo-item" data-seed="${seed}">
+                        <div class="cm-spinner" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:24px; height:24px; border-width:2px; border-top-color:#7c6fff;"></div>
+                        <img src="https://pollinations.ai/p/${encodedPrompt}?width=1080&height=1350&seed=${Math.floor(Math.random()*1000000)}&nologo=true" 
+                             style="opacity:0; transition:opacity 0.4s;" 
+                             onload="this.style.opacity='1'; this.previousElementSibling.remove();">
+                        <div class="ai-item-overlay">Draft #${seed}</div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div class="ai-grid-footer">
+                <button id="AI-USE-GALLERY" class="cm-btn-secondary" style="font-size:0.75rem; padding:10px 16px; min-width:120px;">📂 Backend Gallery</button>
+                <div style="flex-grow:1;"></div>
+                <button id="AI-CONFIRM" class="cm-btn-download" style="font-size:0.8rem; padding:10px 20px; display:none; background:#43d08a; border-color:#43d08a; color:#fff;">Confirm Selection</button>
+            </div>
+        `;
+        this.overlay.querySelector('div').appendChild(overlay);
+
+        let selectedUrl = '';
+        const items = overlay.querySelectorAll('.ai-photo-item');
+        items.forEach(item => {
+            item.onclick = () => {
+                items.forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                selectedUrl = item.querySelector('img').src;
+                document.getElementById('AI-CONFIRM').style.display = 'block';
+            };
+        });
+
+        document.getElementById('AI-CLOSE').onclick = () => overlay.remove();
+        
+        document.getElementById('AI-USE-GALLERY').onclick = () => {
+            overlay.remove();
+            GalleryUI.show(async (url) => {
+                this.selectedImage = url;
+                this.updatePhotoUI();
+                await this.captureAndDownload();
+                setTimeout(() => this.executeSocialShare(platform), 2000);
+            });
+        };
+
+        document.getElementById('AI-CONFIRM').onclick = async () => {
+            overlay.remove();
+            this.selectedImage = selectedUrl;
+            this.updatePhotoUI();
+            this.showFeedback("✨ AI Photo Selected!");
+            await this.captureAndDownload();
+            // Wait for download to start then share
+            setTimeout(() => this.executeSocialShare(platform), 2500);
+        };
+    },
+    executeSocialShare(platform) {
+        const text = this.variants[this.currentIndex] || (typeof _lastContentText !== 'undefined' ? _lastContentText : '');
+        const url = window.location.origin + window.location.pathname;
+        const u = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
+
+        // Always copy for convenience
+        navigator.clipboard.writeText(text);
+
+        let target = '';
+        switch(platform) {
+            case 'x':
+                target = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                break;
+            case 'fb':
+                target = u.fbLink || `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
+                break;
+            case 'li':
+                target = u.liLink || `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+                break;
+            case 'ig':
+                target = u.igLink || 'https://www.instagram.com/';
+                break;
+        }
+        
+        if (target) {
+            window.open(target, '_blank');
+            const msg = platform === 'x' ? "✨ Copied! Compose box opened." : "📋 Content Copied! Now Paste (Ctrl+V) in site.";
+            this.showFeedback(msg);
         }
     },
     show(title, loading = true) {
@@ -1237,11 +1480,17 @@ const ContentUI = {
         const section = document.getElementById('DCM-IMAGE-SECTION');
         const preview = document.getElementById('DCM-PREVIEW');
         const placeholder = document.getElementById('DCM-PREVIEW-PLACEHOLDER');
+        const removeBtn = document.getElementById('DCM-REMOVE-PHOTO');
         const galleryBtn = document.getElementById('DCM-OPEN-GALLERY');
         const uploadBtn = document.getElementById('DCM-UPLOAD-PHOTO');
         const toggleIcon = document.getElementById('DCM-PHOTO-ICON');
         const toggleText = document.getElementById('DCM-PHOTO-TEXT');
         const downloadWrap = document.getElementById('DCM-DOWNLOAD-WRAP');
+
+        if (!section || !preview || !placeholder || !removeBtn || !galleryBtn || !uploadBtn || !toggleIcon || !toggleText || !downloadWrap) {
+            console.warn("ContentUI: Some photo UI elements missing from DOM");
+            return;
+        }
 
         if (this.withPhoto) {
             section.style.display = 'block';
@@ -1255,15 +1504,18 @@ const ContentUI = {
                 preview.style.display = 'block';
                 placeholder.style.display = 'none';
                 downloadWrap.style.display = 'block';
+                removeBtn.style.display = 'flex';
             } else {
                 preview.style.display = 'none';
                 placeholder.style.display = 'block';
                 downloadWrap.style.display = 'none';
+                removeBtn.style.display = 'none';
             }
         } else {
             section.style.display = 'none';
             galleryBtn.style.display = 'none';
             uploadBtn.style.display = 'none';
+            removeBtn.style.display = 'none';
             toggleIcon.textContent = '🚫';
             toggleText.textContent = 'No Photo';
             downloadWrap.style.display = 'none';
