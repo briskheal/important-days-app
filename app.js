@@ -1450,10 +1450,19 @@ const ContentUI = {
                 <button id="AI-CLOSE" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; cursor:pointer; font-size:1.2rem; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:0.2s;">&times;</button>
             </div>
 
-            <div class="ai-dim-row">
-                <button class="ai-dim-btn ${this.aiDimensions.label === '2:3' ? 'active' : ''}" data-w="1080" data-h="1350" data-label="2:3">📐 2:3 (Port)</button>
-                <button class="ai-dim-btn ${this.aiDimensions.label === '1:1' ? 'active' : ''}" data-w="1080" data-h="1080" data-label="1:1">⬜ 1:1 (Sq)</button>
-                <button class="ai-dim-btn ${this.aiDimensions.label === '1024' ? 'active' : ''}" data-w="1024" data-h="1024" data-label="1024">🖼️ 1024px</button>
+            <div class="ai-dim-row" style="margin-bottom:10px;">
+                <button class="ai-dim-btn ${this.aiDimensions.label === '2:3' ? 'active' : ''}" data-w="1080" data-h="1350" data-label="2:3">📐 2:3</button>
+                <button class="ai-dim-btn ${this.aiDimensions.label === '1:1' ? 'active' : ''}" data-w="1080" data-h="1080" data-label="1:1">⬜ 1:1</button>
+                <button class="ai-dim-btn ${this.aiDimensions.label === '16:9' ? 'active' : ''}" data-w="1280" data-h="720" data-label="16:9">📺 16:9</button>
+                <button class="ai-dim-btn ${this.aiDimensions.label === '1024' ? 'active' : ''}" data-w="1024" data-h="1024" data-label="1024">🖼️ 1024</button>
+                <button class="ai-dim-btn ${this.aiDimensions.label === 'Custom' ? 'active' : ''}" data-label="Custom">⚙️ Custom</button>
+            </div>
+            
+            <div id="AI-CUSTOM-WRAP" style="display:${this.aiDimensions.label === 'Custom' ? 'flex' : 'none'}; gap:8px; justify-content:center; margin-bottom:15px; align-items:center;">
+                <input type="number" id="AI-CUSTOM-W" value="${this.aiDimensions.width}" placeholder="W" style="width:70px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:6px; border-radius:6px; font-size:0.8rem;">
+                <span style="color:#ffffff44;">&times;</span>
+                <input type="number" id="AI-CUSTOM-H" value="${this.aiDimensions.height}" placeholder="H" style="width:70px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:6px; border-radius:6px; font-size:0.8rem;">
+                <button id="AI-CUSTOM-APPLY" class="cm-btn-secondary" style="padding:6px 12px; font-size:0.75rem;">Apply</button>
             </div>
             
             <div class="ai-single-preview" id="AI-PREVIEW-WRAP">
@@ -1511,20 +1520,42 @@ const ContentUI = {
             }
         };
 
+        const customWrap = document.getElementById('AI-CUSTOM-WRAP');
+        const customW = document.getElementById('AI-CUSTOM-W');
+        const customH = document.getElementById('AI-CUSTOM-H');
+
         document.querySelectorAll('.ai-dim-btn').forEach(btn => {
             btn.onclick = () => {
                 document.querySelectorAll('.ai-dim-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                this.aiDimensions = {
-                    width: parseInt(btn.dataset.w),
-                    height: parseInt(btn.dataset.h),
-                    label: btn.dataset.label
-                };
-                console.log("📐 Dimension changed to:", this.aiDimensions.label, this.aiDimensions.width, "x", this.aiDimensions.height);
-                providerIndex = 0; // Reset provider index for different dimension
-                loadNextPhoto();
+                
+                const label = btn.dataset.label;
+                if (label === 'Custom') {
+                    customWrap.style.display = 'flex';
+                } else {
+                    customWrap.style.display = 'none';
+                    this.aiDimensions = {
+                        width: parseInt(btn.dataset.w),
+                        height: parseInt(btn.dataset.h),
+                        label: label
+                    };
+                    console.log("📐 Preset dimension selected:", label, this.aiDimensions.width, "x", this.aiDimensions.height);
+                    providerIndex = 0;
+                    loadNextPhoto();
+                }
             };
         });
+
+        document.getElementById('AI-CUSTOM-APPLY').onclick = () => {
+            const w = parseInt(customW.value);
+            const h = parseInt(customH.value);
+            if (w > 0 && h > 0) {
+                this.aiDimensions = { width: w, height: h, label: 'Custom' };
+                console.log("📐 Custom dimension applied:", w, "x", h);
+                providerIndex = 0;
+                loadNextPhoto();
+            }
+        };
 
         loadNextPhoto();
 
