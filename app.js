@@ -995,7 +995,7 @@ const ContentUI = {
 
                 <!-- NEW: Integrated Scroll Container -->
                 <div class="cm-scroll-container" style="position:relative;">
-                    <div id="DCM-SCROLL-VIEWPORT" style="max-height: 70vh; overflow-y: auto; scrollbar-width: none; position: relative; scroll-behavior: smooth;">
+                    <div id="DCM-SCROLL-VIEWPORT" style="max-height: 480px; overflow-y: auto; scrollbar-width: none; position: relative; scroll-behavior: smooth;">
                         
                         <div id="DCM-BODY" style="padding:16px 20px; line-height:1.6; font-size:0.95rem; color:#d1d5db;"></div>
                         
@@ -1136,13 +1136,7 @@ const ContentUI = {
 
         const getShareText = () => this.variants[this.currentIndex] || (typeof _lastContentText !== 'undefined' ? _lastContentText : '');
 
-        // Scroll handlers
-        document.getElementById('DCM-SCROLL-UP').onclick = () => {
-            this.body.scrollTop -= 60;
-        };
-        document.getElementById('DCM-SCROLL-DOWN').onclick = () => {
-            this.body.scrollTop += 60;
-        };
+        // Scroll handlers removed as we now use the Ribbon and native scroll viewport
 
         this.refreshBtn.onclick = () => {
             console.log("Next Variant clicked. Current index:", this.currentIndex, "Total:", this.variants.length);
