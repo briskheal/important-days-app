@@ -3278,7 +3278,7 @@ html {
     position: absolute;
     right: 8px;
     top: 60px; /* Below the modal header */
-    bottom: 200px; /* Above the footer/image area */
+    bottom: 20px; /* Stretched to bottom */
     width: 4px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 2px;
@@ -3383,12 +3383,37 @@ html {
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.premium-glow-text {
-    background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 800;
+/* ====================================
+   DIMENSION PICKER
+   ==================================== */
+.ai-dim-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.ai-dim-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.ai-dim-btn.active {
+    background: rgba(124, 111, 255, 0.2);
+    border-color: #7c6fff;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(124, 111, 255, 0.2);
+}
+
+.ai-dim-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.08);
 }
 /* -- Trial Expiration Blinking -- */
 @keyframes blink {

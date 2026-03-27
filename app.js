@@ -961,6 +961,7 @@ const ContentUI = {
     currentIndex: 0,
     selectedImage: null,
     withPhoto: true,
+    aiDimensions: { width: 1080, height: 1350, label: '2:3' },
     init() {
         console.log("ContentUI: Initializing...");
         const existing = document.getElementById('dynamic-content-modal');
@@ -1132,9 +1133,12 @@ const ContentUI = {
         };
 
         this.refreshBtn.onclick = () => {
+            console.log("Next Variant clicked. Current index:", this.currentIndex, "Total:", this.variants.length);
             if (this.variants.length > 1) {
                 this.currentIndex = (this.currentIndex + 1) % this.variants.length;
                 this.updateContent(this._currentIsAi);
+            } else {
+                console.warn("Next Variant: Only one variant available.");
             }
         };
 
@@ -1196,7 +1200,7 @@ const ContentUI = {
             postAllBtn.onclick = () => {
                 const text = getShareText();
                 if (!text) return;
-
+                console.log("🚀 Post all clicked with text length:", text.length);
                 const u = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
                 const url = window.location.origin + window.location.pathname;
                 
@@ -1403,17 +1407,19 @@ const ContentUI = {
         const generateUrl = (idx) => {
             const seed = Math.floor(Math.random() * 1000000);
             const type = providers[idx % providers.length];
+            const w = this.aiDimensions.width;
+            const h = this.aiDimensions.height;
             
             if (type === 'ai') {
                 const styles = ['digital art, vibrant colors', 'cinematic lighting, masterpiece', 'minimalist vector style', 'highly detailed photography'];
                 const style = styles[idx % styles.length];
                 const prompt = `${title}: ${essence}, ${style}, high resolution, 8k, trending on artstation, no text, clean composition`;
-                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true&model=flux`;
+                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true&model=flux`;
             } else if (type === 'real') {
                 const prompt = `Realistic professional photography of a scene representing ${title} (${essence}), high resolution, 8k, award winning photo, national geographic style`;
-                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true&model=flux`;
+                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true&model=flux`;
             } else {
-                return `https://picsum.photos/seed/${seed}/1080/1350`;
+                return `https://picsum.photos/seed/${seed}/${w}/${h}`;
             }
         };
 
@@ -1425,6 +1431,12 @@ const ContentUI = {
                     <span style="font-size:1.4rem;">✨</span> AI PHOTO MASTER
                 </div>
                 <button id="AI-CLOSE" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; cursor:pointer; font-size:1.2rem; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:0.2s;">&times;</button>
+            </div>
+
+            <div class="ai-dim-row">
+                <button class="ai-dim-btn ${this.aiDimensions.label === '2:3' ? 'active' : ''}" data-w="1080" data-h="1350" data-label="2:3">📐 2:3 (Port)</button>
+                <button class="ai-dim-btn ${this.aiDimensions.label === '1:1' ? 'active' : ''}" data-w="1080" data-h="1080" data-label="1:1">⬜ 1:1 (Sq)</button>
+                <button class="ai-dim-btn ${this.aiDimensions.label === '1024' ? 'active' : ''}" data-w="1024" data-h="1024" data-label="1024">🖼️ 1024px</button>
             </div>
             
             <div class="ai-single-preview" id="AI-PREVIEW-WRAP">
@@ -1482,10 +1494,20 @@ const ContentUI = {
             }
         };
 
-        document.getElementById('AI-TRY-ANOTHER').onclick = () => {
-            providerIndex++;
-            loadNextPhoto();
-        };
+        document.querySelectorAll('.ai-dim-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.ai-dim-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.aiDimensions = {
+                    width: parseInt(btn.dataset.w),
+                    height: parseInt(btn.dataset.h),
+                    label: btn.dataset.label
+                };
+                console.log("📐 Dimension changed to:", this.aiDimensions.label, this.aiDimensions.width, "x", this.aiDimensions.height);
+                providerIndex = 0; // Reset provider index for different dimension
+                loadNextPhoto();
+            };
+        });
 
         loadNextPhoto();
 
@@ -1601,7 +1623,11 @@ const ContentUI = {
                 }
             }
 
-            if (this.refreshBtn) this.refreshBtn.style.display = (this.variants.length > 1) ? 'flex' : 'none';
+            if (this.refreshBtn) {
+                const multi = this.variants.length > 1;
+                this.refreshBtn.style.display = multi ? 'flex' : 'none';
+                console.log("ContentUI: Variant button visible:", multi, "Count:", this.variants.length);
+            }
             _lastContentText = text;
             this.updatePhotoUI();
         }
