@@ -991,11 +991,10 @@ const ContentUI = {
                         <button id="DCM-CLOSE" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#9ca3af; width:36px; height:36px; border-radius:50%; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; transition:0.2s;">✕</button>
                     </div>
                 </div>
-                <div class="cm-scroll-container">
-                    <div id="DCM-BODY" style="padding:16px 20px; line-height:1.6; font-size:0.95rem; color:#d1d5db; height:240px; overflow-y:auto; scrollbar-width:thin; position:relative; scroll-behavior:smooth;"></div>
-                    <div class="cm-scroll-btns">
-                        <button id="DCM-SCROLL-UP" class="cm-scroll-btn" title="Scroll Up">▲</button>
-                        <button id="DCM-SCROLL-DOWN" class="cm-scroll-btn" title="Scroll Down">▼</button>
+                <div class="cm-scroll-container" style="position:relative;">
+                    <div id="DCM-BODY" style="padding:16px 20px; line-height:1.6; font-size:0.95rem; color:#d1d5db; height:240px; overflow-y:auto; scrollbar-width:none; position:relative; scroll-behavior:smooth;"></div>
+                    <div id="DCM-RIBBON" class="modal-scroll-ribbon">
+                        <div id="DCM-THUMB" class="modal-scroll-thumb"></div>
                     </div>
                 </div>
                 
@@ -1138,6 +1137,42 @@ const ContentUI = {
                 this.updateContent(this._currentIsAi);
             }
         };
+
+        // Modal Ribbon Sync
+        const body = this.body;
+        const ribbon = document.getElementById('DCM-RIBBON');
+        const thumb = document.getElementById('DCM-THUMB');
+        
+        if (body && ribbon && thumb) {
+            const updateModalThumb = () => {
+                const scrollHeight = body.scrollHeight - body.clientHeight;
+                if (scrollHeight <= 0) {
+                    ribbon.style.display = 'none';
+                    return;
+                }
+                ribbon.style.display = 'block';
+                const scrolled = (body.scrollTop / scrollHeight) * 100;
+                const maxTop = ribbon.clientHeight - thumb.clientHeight;
+                thumb.style.top = (scrolled / 100) * maxTop + 'px';
+            };
+
+            body.addEventListener('scroll', updateModalThumb);
+            
+            // Click on ribbon to scroll
+            ribbon.onclick = (e) => {
+                const rect = ribbon.getBoundingClientRect();
+                const y = e.clientY - rect.top;
+                const percentage = y / rect.height;
+                body.scrollTop = percentage * (body.scrollHeight - body.clientHeight);
+            };
+
+            // Observer to handle content changes
+            const observer = new MutationObserver(updateModalThumb);
+            observer.observe(body, { childList: true, subtree: true, characterData: true });
+            
+            // Initial update
+            setTimeout(updateModalThumb, 100);
+        }
 
         // Social Button Handlers
         document.getElementById('DCM-X').onclick = () => this.startShareFlow('x');
@@ -1370,13 +1405,11 @@ const ContentUI = {
             const type = providers[idx % providers.length];
             
             if (type === 'ai') {
-                // Using Pollinations with robust prompt engineering for high quality
                 const styles = ['digital art, vibrant colors', 'cinematic lighting, masterpiece', 'minimalist vector style', 'highly detailed photography'];
                 const style = styles[idx % styles.length];
                 const prompt = `${title}: ${essence}, ${style}, high resolution, 8k, trending on artstation, no text, clean composition`;
                 return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true&model=flux`;
             } else if (type === 'real') {
-                // Enhanced Pollinations prompt for realistic photography style instead of broken Unsplash
                 const prompt = `Realistic professional photography of a scene representing ${title} (${essence}), high resolution, 8k, award winning photo, national geographic style`;
                 return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true&model=flux`;
             } else {
@@ -1388,31 +1421,31 @@ const ContentUI = {
         overlay.className = 'ai-photo-selector-overlay';
         overlay.innerHTML = `
             <div class="ai-grid-header">
-                <div style="color:#7c6fff; font-weight:800; font-size:1rem; display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:1.2rem;">✨</span> AI PHOTO VARIANT
+                <div class="premium-glow-text" style="font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.4rem;">✨</span> AI PHOTO MASTER
                 </div>
-                <button id="AI-CLOSE" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.5rem; padding:5px;">&times;</button>
+                <button id="AI-CLOSE" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; cursor:pointer; font-size:1.2rem; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:0.2s;">&times;</button>
             </div>
             
             <div class="ai-single-preview" id="AI-PREVIEW-WRAP">
-                <div class="cm-spinner" id="AI-SPINNER" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:32px; height:32px; border-width:3px;"></div>
-                <div id="AI-ERROR" class="ai-error-msg" style="display:none;">
-                    <span style="font-size:1.5rem; display:block; margin-bottom:10px;">📉</span>
-                    Generation failed. Please try again or use your gallery.
+                <div class="cm-spinner" id="AI-SPINNER" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:32px; height:32px; border-width:3px; border-color:var(--accent-main) transparent var(--accent-main) transparent;"></div>
+                <div id="AI-ERROR" class="ai-error-msg" style="display:none; text-align:center; padding:20px;">
+                    <span style="font-size:2rem; display:block; margin-bottom:15px;">📉</span>
+                    <p style="font-size:0.9rem; color:#94a3b8;">Generation limit reached or connection lost.<br>Try another variant or use gallery.</p>
                 </div>
-                <img id="AI-IMG" src="" style="opacity:0; transition:opacity 0.4s; display:none;">
+                <img id="AI-IMG" src="" style="opacity:0; transition:opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1); display:none; border-radius:8px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
             </div>
-
+            
             <div style="display:flex; justify-content:center; margin-bottom:20px;">
                 <button id="AI-TRY-ANOTHER" class="ai-try-another-btn">
-                    🔄 Try Another Variant
+                    <span>🔄</span> Generate Different Style
                 </button>
             </div>
             
             <div class="ai-grid-footer">
-                <button id="AI-USE-GALLERY" class="cm-btn-secondary" style="font-size:0.75rem; padding:10px 16px;">📂 Backend Gallery</button>
+                <button id="AI-USE-GALLERY" class="cm-btn-secondary" style="font-size:0.8rem; padding:12px 20px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1);">📂 Open Gallery</button>
                 <div style="flex-grow:1;"></div>
-                <button id="AI-CONFIRM" class="cm-btn-download" style="font-size:0.85rem; padding:10px 24px; background:#43d08a; border-color:#43d08a; color:#fff;">Apply This Photo</button>
+                <button id="AI-CONFIRM" class="cm-btn-download" style="font-size:0.9rem; padding:12px 28px; background:linear-gradient(135deg, #43d08a, #10b981); border:none; color:#fff; font-weight:800; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">Apply This Masterpiece</button>
             </div>
         `;
         this.overlay.querySelector('div').appendChild(overlay);
@@ -1423,7 +1456,7 @@ const ContentUI = {
 
         const loadNextPhoto = () => {
             img.style.opacity = '0';
-            img.style.display = 'none'; // Hide until loaded
+            img.style.display = 'none'; 
             spinner.style.display = 'block';
             errorMsg.style.display = 'none';
             const url = generateUrl(providerIndex);
@@ -1454,7 +1487,6 @@ const ContentUI = {
             loadNextPhoto();
         };
 
-        // Initial load
         loadNextPhoto();
 
         document.getElementById('AI-CLOSE').onclick = () => overlay.remove();
