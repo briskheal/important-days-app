@@ -1370,10 +1370,15 @@ const ContentUI = {
             const type = providers[idx % providers.length];
             
             if (type === 'ai') {
-                const prompt = `${title}: ${essence}, artistic, cinematic, high-quality photography, 4k`;
-                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true`;
+                // Using Pollinations with robust prompt engineering for high quality
+                const styles = ['digital art, vibrant colors', 'cinematic lighting, masterpiece', 'minimalist vector style', 'highly detailed photography'];
+                const style = styles[idx % styles.length];
+                const prompt = `${title}: ${essence}, ${style}, high resolution, 8k, trending on artstation, no text, clean composition`;
+                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true&model=flux`;
             } else if (type === 'real') {
-                return `https://loremflickr.com/1080/1350/${encodeURIComponent(essence.replace(/\s+/g,','))}?lock=${seed}`;
+                // Enhanced Pollinations prompt for realistic photography style instead of broken Unsplash
+                const prompt = `Realistic professional photography of a scene representing ${title} (${essence}), high resolution, 8k, award winning photo, national geographic style`;
+                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${seed}&nologo=true&model=flux`;
             } else {
                 return `https://picsum.photos/seed/${seed}/1080/1350`;
             }
@@ -2357,3 +2362,73 @@ window.viewReceipt = function(txnId) {
     // Trigger Print
     window.print();
 };
+
+// ── Side Scroll Ribbon Logic ──────────────────
+(function initScrollRibbon() {
+    const ribbon = document.getElementById('scroll-ribbon');
+    const thumb = document.getElementById('scroll-thumb');
+    if (!ribbon || !thumb) return;
+
+    function updateThumb() {
+        const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        if (height <= 0) {
+            ribbon.style.display = 'none';
+            return;
+        }
+        ribbon.style.display = 'block';
+        const scrolled = (winScroll / height) * 100;
+        
+        const ribbonHeight = ribbon.clientHeight;
+        const thumbHeight = 30; // Min thumb height
+        const maxTop = ribbonHeight - thumbHeight;
+        
+        const topPos = (scrolled / 100) * maxTop;
+        thumb.style.top = Math.max(0, Math.min(topPos, maxTop)) + 'px';
+    }
+
+    window.addEventListener('scroll', updateThumb);
+    window.addEventListener('resize', updateThumb);
+    
+    // Initial call
+    setTimeout(updateThumb, 500);
+
+    // Click to scroll logic
+    ribbon.addEventListener('click', (e) => {
+        const rect = ribbon.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const percentage = y / rect.height;
+        const targetScroll = percentage * (document.documentElement.scrollHeight - document.documentElement.clientHeight);
+        
+        window.scrollTo({
+            top: targetScroll,
+            behavior: 'smooth'
+        });
+    });
+})();
+
+// ── Category Chips Scroll Hint ──────────────────
+(function initChipsScrollHint() {
+    const wrap = document.getElementById('category-chips');
+    if (!wrap) return;
+
+    // Add hint element if it doesn't exist
+    let hint = wrap.parentElement.querySelector('.chips-scroll-hint');
+    if (!hint) {
+        hint = document.createElement('div');
+        hint.className = 'chips-scroll-hint';
+        wrap.parentElement.appendChild(hint);
+    }
+
+    function checkScroll() {
+        const hasScroll = wrap.scrollWidth > wrap.clientWidth;
+        const isAtEnd = wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 10;
+        hint.style.display = (hasScroll && !isAtEnd) ? 'block' : 'none';
+    }
+
+    wrap.addEventListener('scroll', checkScroll);
+    window.addEventListener('resize', checkScroll);
+    
+    // Check after a short delay for initial render
+    setTimeout(checkScroll, 1000);
+})();
