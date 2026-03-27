@@ -1156,8 +1156,18 @@ const ContentUI = {
         const mainCustomH = document.getElementById('DCM-CUSTOM-H');
 
         if (mainDimRow && mainCustomWrap) {
-            document.querySelectorAll('.dcm-dim-btn').forEach(btn => {
+            const dimBtns = document.querySelectorAll('.dcm-dim-btn');
+            
+            // Initial Active State
+            dimBtns.forEach(b => {
+                if (b.dataset.label === this.aiDimensions.label) b.classList.add('active');
+            });
+
+            dimBtns.forEach(btn => {
                 btn.onclick = () => {
+                    dimBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
                     const label = btn.dataset.label;
                     if (label === 'Custom') {
                         mainCustomWrap.style.display = 'flex';

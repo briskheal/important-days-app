@@ -107,6 +107,12 @@ const User = mongoose.model('User', userSchema);
 const Payment = mongoose.model('Payment', paymentSchema);
 const Admin = mongoose.model('Admin', adminSchema);
 
+const deletedImageSchema = new mongoose.Schema({
+    url: { type: String, unique: true },
+    deletedAt: { type: Date, default: Date.now }
+});
+const DeletedImage = mongoose.model('DeletedImage', deletedImageSchema);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -206,23 +212,33 @@ app.post('/api/upload-photo', upload.single('photo'), (req, res) => {
     }
 });
 
-app.post('/api/delete-photo', (req, res) => {
+app.post('/api/delete-photo', async (req, res) => {
     try {
         const { url } = req.body;
         if (!url) return res.status(400).json({ error: 'No URL provided' });
         
-        // Security: Ensure the path is within public/gallery to prevent directory traversal
+        // 1. Permanent Blacklist in DB (to survive restarts)
+        try {
+            await DeletedImage.findOneAndUpdate(
+                { url },
+                { url, deletedAt: new Date() },
+                { upsert: true }
+            );
+            console.log(`[OK] Photo blacklisted in DB: ${url}`);
+        } catch (dbErr) {
+            console.error("DB Blacklist Error:", dbErr);
+        }
+
+        // 2. Attempt Filesystem Delete (Immediate)
         const fileName = path.basename(url);
         const filePath = path.join(__dirname, 'public', 'gallery', fileName);
         
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
-            console.log(`[OK] Photo deleted: ${filePath}`);
-            res.json({ status: 'success' });
-        } else {
-            console.warn(`[WARN] Delete failed: File not found: ${filePath}`);
-            res.status(404).json({ error: 'File not found' });
+            console.log(`[OK] Photo unlinked from disk: ${filePath}`);
         }
+        
+        res.json({ status: 'success' });
     } catch (err) {
         console.error("Delete Error:", err);
         res.status(500).json({ error: 'Delete failed' });
@@ -932,20 +948,29 @@ app.get('/api/content', async (req, res) => {
 
 
 // 13. BACKEND GALLERY API
-app.get('/api/gallery', (req, res) => {
+app.get('/api/gallery', async (req, res) => {
     const galleryPath = path.join(__dirname, 'public', 'gallery');
     if (!fs.existsSync(galleryPath)) {
         return res.json([]);
     }
-    fs.readdir(galleryPath, (err, files) => {
-        if (err) {
-            console.error("Gallery Read Error:", err);
-            return res.status(500).json({ error: "Failed to read gallery" });
-        }
-        // Filter for images only
-        const images = files.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f));
-        res.json(images.map(f => `/public/gallery/${f}`));
-    });
+
+    try {
+        // 1. Get all files
+        const files = fs.readdirSync(galleryPath);
+        const allImages = files
+            .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f))
+            .map(f => `/public/gallery/${f}`);
+
+        // 2. Filter out blacklisted ones from DB
+        const deletedRecords = await DeletedImage.find({}, 'url');
+        const deletedUrls = new Set(deletedRecords.map(r => r.url));
+
+        const visibleImages = allImages.filter(url => !deletedUrls.has(url));
+        res.json(visibleImages);
+    } catch (err) {
+        console.error("Gallery API Error:", err);
+        res.status(500).json({ error: "Failed to fetch gallery" });
+    }
 });
 
 // 13. RESET DATABASE (Protected)

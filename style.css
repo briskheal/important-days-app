@@ -3393,7 +3393,7 @@ html {
     margin-bottom: 20px;
 }
 
-.ai-dim-btn {
+.ai-dim-btn, .dcm-dim-btn {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: #94a3b8;
@@ -3405,7 +3405,7 @@ html {
     transition: 0.2s;
 }
 
-.ai-dim-btn.active {
+.ai-dim-btn.active, .dcm-dim-btn.active {
     background: rgba(124, 111, 255, 0.2);
     border-color: #7c6fff;
     color: #fff;
