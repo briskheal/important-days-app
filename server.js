@@ -23,6 +23,7 @@ if (MONGODB_URI && !MONGODB_URI.includes('your_mongodb_atlas')) {
         .then(() => {
             console.log('[OK] Connected to MongoDB Atlas');
             dbConnected = true;
+            syncGalleryFromDB(); // Restore uploads on start
         })
         .catch(err => {
             console.error('[ERR] MongoDB Connection Error:', err.message);
@@ -113,6 +114,39 @@ const deletedImageSchema = new mongoose.Schema({
 });
 const DeletedImage = mongoose.model('DeletedImage', deletedImageSchema);
 
+const galleryImageSchema = new mongoose.Schema({
+    filename: { type: String, unique: true },
+    contentType: String,
+    data: Buffer, // Store binary data
+    uploadedAt: { type: Date, default: Date.now }
+});
+const GalleryImage = mongoose.model('GalleryImage', galleryImageSchema);
+
+// ── SYNC LOGIC: Restore Gallery from DB on Startup ──
+async function syncGalleryFromDB() {
+    const galleryPath = path.join(__dirname, 'public', 'gallery');
+    if (!fs.existsSync(galleryPath)) fs.mkdirSync(galleryPath, { recursive: true });
+
+    try {
+        const images = await GalleryImage.find({});
+        console.log(`[SYNC] Found ${images.length} images in MongoDB. Checking filesystem...`);
+        
+        let restoredCount = 0;
+        for (const img of images) {
+            const filePath = path.join(galleryPath, img.filename);
+            if (!fs.existsSync(filePath)) {
+                fs.writeFileSync(filePath, img.data);
+                console.log(`[SYNC] Restored missing file: ${img.filename}`);
+                restoredCount++;
+            }
+        }
+        if (restoredCount > 0) console.log(`[OK] Successfully restored ${restoredCount} files to /public/gallery`);
+        else console.log(`[OK] Filesystem is already in sync with DB.`);
+    } catch (err) {
+        console.error("[ERR] Gallery Sync Failed:", err);
+    }
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -200,11 +234,30 @@ const upload = multer({
     }
 });
 
-app.post('/api/upload-photo', upload.single('photo'), (req, res) => {
+app.post('/api/upload-photo', upload.single('photo'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
         const filePath = `/public/gallery/${req.file.filename}`;
-        console.log(`[OK] Photo uploaded: ${filePath}`);
+        
+        // 1. Permanent Storage in MongoDB
+        try {
+            const imageBuffer = fs.readFileSync(req.file.path);
+            await GalleryImage.findOneAndUpdate(
+                { filename: req.file.filename },
+                { 
+                    filename: req.file.filename,
+                    contentType: req.file.mimetype,
+                    data: imageBuffer,
+                    uploadedAt: new Date()
+                },
+                { upsert: true }
+            );
+            console.log(`[OK] Photo saved to MongoDB: ${req.file.filename}`);
+        } catch (dbErr) {
+            console.error("DB Upload Error:", dbErr);
+        }
+
+        console.log(`[OK] Photo uploaded to disk: ${filePath}`);
         res.json({ status: 'success', url: filePath });
     } catch (err) {
         console.error("Upload error:", err);
@@ -224,9 +277,14 @@ app.post('/api/delete-photo', async (req, res) => {
                 { url, deletedAt: new Date() },
                 { upsert: true }
             );
-            console.log(`[OK] Photo blacklisted in DB: ${url}`);
+            
+            // 2. ALSO remove from GalleryImage collection if it was an upload
+            const fileName = path.basename(url);
+            await GalleryImage.deleteOne({ filename: fileName });
+            
+            console.log(`[OK] Photo blacklisted and removed from DB storage: ${url}`);
         } catch (dbErr) {
-            console.error("DB Blacklist Error:", dbErr);
+            console.error("DB Blacklist/Delete Error:", dbErr);
         }
 
         // 2. Attempt Filesystem Delete (Immediate)
