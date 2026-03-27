@@ -1024,6 +1024,21 @@ const ContentUI = {
                                 🗑️
                             </button>
                         </div>
+
+                        <!-- NEW: Main Photo Dimension Selector -->
+                        <div id="DCM-DIM-ROW" style="display:none; padding:10px 20px; gap:6px; flex-wrap:wrap; justify-content:center; border-top:1px solid rgba(255,255,255,0.05); margin-top:8px;">
+                            <button class="dcm-dim-btn" data-w="1080" data-h="1350" data-label="2:3" style="font-size:0.7rem; padding:4px 8px;">2:3</button>
+                            <button class="dcm-dim-btn" data-w="1080" data-h="1080" data-label="1:1" style="font-size:0.7rem; padding:4px 8px;">1:1</button>
+                            <button class="dcm-dim-btn" data-w="1280" data-h="720" data-label="16:9" style="font-size:0.7rem; padding:4px 8px;">16:9</button>
+                            <button class="dcm-dim-btn" data-w="1024" data-h="1024" data-label="1024" style="font-size:0.7rem; padding:4px 8px;">1K</button>
+                            <button class="dcm-dim-btn" data-label="Custom" style="font-size:0.7rem; padding:4px 8px;">⚙️</button>
+                        </div>
+                        <div id="DCM-CUSTOM-WRAP" style="display:none; gap:6px; justify-content:center; padding:0 20px 10px; align-items:center;">
+                            <input type="number" id="DCM-CUSTOM-W" placeholder="W" style="width:50px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:4px; border-radius:4px; font-size:0.7rem;">
+                            <span style="color:#ffffff44; font-size:0.7rem;">&times;</span>
+                            <input type="number" id="DCM-CUSTOM-H" placeholder="H" style="width:50px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:4px; border-radius:4px; font-size:0.7rem;">
+                            <button id="DCM-CUSTOM-APPLY" class="cm-btn-secondary" style="padding:4px 8px; font-size:0.65rem;">Set</button>
+                        </div>
                         
                         <div id="DCM-DOWNLOAD-WRAP" style="padding:12px 20px 0; display:none;">
                             <button id="DCM-DOWNLOAD-BTN" class="cm-btn-download">
@@ -1133,6 +1148,42 @@ const ContentUI = {
         document.getElementById('DCM-DOWNLOAD-BTN').onclick = () => {
             this.captureAndDownload();
         };
+
+        // Main Modal Dimension Handlers
+        const mainDimRow = document.getElementById('DCM-DIM-ROW');
+        const mainCustomWrap = document.getElementById('DCM-CUSTOM-WRAP');
+        const mainCustomW = document.getElementById('DCM-CUSTOM-W');
+        const mainCustomH = document.getElementById('DCM-CUSTOM-H');
+
+        if (mainDimRow && mainCustomWrap) {
+            document.querySelectorAll('.dcm-dim-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const label = btn.dataset.label;
+                    if (label === 'Custom') {
+                        mainCustomWrap.style.display = 'flex';
+                    } else {
+                        mainCustomWrap.style.display = 'none';
+                        this.aiDimensions = {
+                            width: parseInt(btn.dataset.w),
+                            height: parseInt(btn.dataset.h),
+                            label: label
+                        };
+                        this.showFeedback(`📏 Dim: ${label}`);
+                        this.updatePhotoUI();
+                    }
+                };
+            });
+
+            document.getElementById('DCM-CUSTOM-APPLY').onclick = () => {
+                const w = parseInt(mainCustomW.value);
+                const h = parseInt(mainCustomH.value);
+                if (w > 0 && h > 0) {
+                    this.aiDimensions = { width: w, height: h, label: 'Custom' };
+                    this.showFeedback(`📏 Custom: ${w}x${h}`);
+                    this.updatePhotoUI();
+                }
+            };
+        }
 
         const getShareText = () => this.variants[this.currentIndex] || (typeof _lastContentText !== 'undefined' ? _lastContentText : '');
 
@@ -1419,10 +1470,10 @@ const ContentUI = {
 
         const essence = getEssenceKeywords(text);
         let providerIndex = 0;
+        let currentSeed = Math.floor(Math.random() * 1000000);
         const providers = ['ai', 'real', 'picsum'];
         
         const generateUrl = (idx) => {
-            const seed = Math.floor(Math.random() * 1000000);
             const type = providers[idx % providers.length];
             const w = this.aiDimensions.width;
             const h = this.aiDimensions.height;
@@ -1431,12 +1482,12 @@ const ContentUI = {
                 const styles = ['digital art, vibrant colors', 'cinematic lighting, masterpiece', 'minimalist vector style', 'highly detailed photography'];
                 const style = styles[idx % styles.length];
                 const prompt = `${title}: ${essence}, ${style}, high resolution, 8k, trending on artstation, no text, clean composition`;
-                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true&model=flux`;
+                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${currentSeed}&nologo=true&model=flux`;
             } else if (type === 'real') {
                 const prompt = `Realistic professional photography of a scene representing ${title} (${essence}), high resolution, 8k, award winning photo, national geographic style`;
-                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true&model=flux`;
+                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${currentSeed}&nologo=true&model=flux`;
             } else {
-                return `https://picsum.photos/seed/${seed}/${w}/${h}`;
+                return `https://picsum.photos/seed/${currentSeed}/${w}/${h}`;
             }
         };
 
@@ -1557,7 +1608,11 @@ const ContentUI = {
             }
         };
 
-        loadNextPhoto();
+        document.getElementById('AI-TRY-ANOTHER').onclick = () => {
+            currentSeed = Math.floor(Math.random() * 1000000);
+            console.log("🔄 Regenerating with new seed:", currentSeed);
+            loadNextPhoto();
+        };
 
         document.getElementById('AI-CLOSE').onclick = () => overlay.remove();
         
@@ -1691,6 +1746,7 @@ const ContentUI = {
         const toggleIcon = document.getElementById('DCM-PHOTO-ICON');
         const toggleText = document.getElementById('DCM-PHOTO-TEXT');
         const downloadWrap = document.getElementById('DCM-DOWNLOAD-WRAP');
+        const dimRow = document.getElementById('DCM-DIM-ROW');
 
         if (!section || !preview || !placeholder || !removeBtn || !galleryBtn || !aiBtn || !uploadBtn || !toggleIcon || !toggleText || !downloadWrap) {
             console.warn("ContentUI: Some photo UI elements missing from DOM");
@@ -1704,9 +1760,27 @@ const ContentUI = {
             uploadBtn.style.display = 'flex';
             toggleIcon.textContent = '🖼️';
             toggleText.textContent = 'With Photo';
+            if (dimRow) dimRow.style.display = 'flex';
             
             if (this.selectedImage) {
-                preview.src = getApiUrl(this.selectedImage);
+                // If it's a Pollinations AI image, ensure the dimensions in the URL match the current settings
+                let displayUrl = this.selectedImage;
+                if (displayUrl.includes('pollinations.ai/p/')) {
+                    try {
+                        const baseUrl = displayUrl.split('?')[0];
+                        const searchStr = displayUrl.split('?')[1] || '';
+                        const parts = searchStr.split('&');
+                        const newParts = parts.filter(p => !p.startsWith('width=') && !p.startsWith('height='));
+                        newParts.push(`width=${this.aiDimensions.width}`);
+                        newParts.push(`height=${this.aiDimensions.height}`);
+                        displayUrl = `${baseUrl}?${newParts.join('&')}`;
+                        this.selectedImage = displayUrl; // Update stored URL for download
+                    } catch (e) {
+                        console.error("Error updating AI photo URL dimensions", e);
+                    }
+                }
+
+                preview.src = displayUrl;
                 preview.style.display = 'block';
                 placeholder.style.display = 'none';
                 downloadWrap.style.display = 'block';
@@ -1725,6 +1799,9 @@ const ContentUI = {
             toggleIcon.textContent = '🚫';
             toggleText.textContent = 'No Photo';
             downloadWrap.style.display = 'none';
+            if (dimRow) dimRow.style.display = 'none';
+            const customWrap = document.getElementById('DCM-CUSTOM-WRAP');
+            if (customWrap) customWrap.style.display = 'none';
         }
     },
     showFeedback(msg, duration = 4000) {
