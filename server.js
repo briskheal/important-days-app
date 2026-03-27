@@ -772,9 +772,44 @@ app.get('/api/content', async (req, res) => {
         let isAi = false;
 
         const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-        // --- Step 1: Attempt Claude AI Content ---
-        if (ANTHROPIC_API_KEY && !ANTHROPIC_API_KEY.includes('your_anthropic_key')) {
+        // --- Step 1: Attempt AI Content (OpenAI GPT-4o-mini Preferred, Fallback to Claude) ---
+        if (OPENAI_API_KEY && !OPENAI_API_KEY.includes('your_openai_key')) {
+            try {
+                console.log(`[AI] Requesting GPT-4o-mini for: ${name}`);
+                const aiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+                    model: "gpt-4o-mini",
+                    messages: [{
+                        role: "system",
+                        content: "You are a professional social media content creator specializing in awareness for global and Indian events. Respond in JSON format."
+                    }, {
+                        role: "user",
+                        content: `Generate high-quality social media awareness content for "${name}" (Category: ${category}). 
+                        Provide exactly 4 variants (Professional, Emotional, Short, Creative), 5 hashtags, and 1 compelling CTA.
+                        JSON Format: {"variants": ["v1","v2","v3","v4"], "hashtags": "#tag1...", "cta": "..."}`
+                    }],
+                    response_format: { type: "json_object" },
+                    max_tokens: 1000
+                }, {
+                    headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+                    timeout: 8000
+                });
+
+                if (aiResponse.data.choices[0].message.content) {
+                    const aiData = JSON.parse(aiResponse.data.choices[0].message.content);
+                    if (aiData.variants && aiData.variants.length >= 4) {
+                        variants = aiData.variants;
+                        hashtags = aiData.hashtags;
+                        cta = aiData.cta;
+                        isAi = true;
+                        console.log(`[OK] GPT-4o-mini content generated for ${name}`);
+                    }
+                }
+            } catch (err) { console.warn(`[WARN] GPT-4o-mini fail: ${err.message}. Trying Claude...`); }
+        }
+
+        if (!isAi && ANTHROPIC_API_KEY && !ANTHROPIC_API_KEY.includes('your_anthropic_key')) {
             try {
                 console.log(`[AI] Requesting Claude 3.5 Haiku for: ${name}`);
                 const aiResponse = await axios.post('https://api.anthropic.com/v1/messages', {

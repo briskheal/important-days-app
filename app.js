@@ -979,8 +979,8 @@ const ContentUI = {
             display: none; align-items: center; justify-content: center; padding: 20px;
         `;
         this.overlay.innerHTML = `
-            <div style="background:#161a2e; border:1px solid rgba(255,255,255,0.1); border-radius:24px; max-width:520px; width:100%; position:relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); color:#ebecf0; font-family:'Inter', sans-serif;">
-                <div style="padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between;">
+            <div class="cm-main-card" style="background:#161a2e; border:1px solid rgba(255,255,255,0.1); border-radius:24px; max-width:520px; width:100%; position:relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); color:#ebecf0; font-family:'Inter', sans-serif; overflow:hidden;">
+                <div class="cm-header" style="padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between; position:relative; z-index:10;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:1.2rem;">💡</span>
                         <h3 id="DCM-TITLE" style="margin:0; font-family:'Outfit',sans-serif; font-size:1.1rem; font-weight:700;">Content</h3>
@@ -992,66 +992,78 @@ const ContentUI = {
                         <button id="DCM-CLOSE" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#9ca3af; width:36px; height:36px; border-radius:50%; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; transition:0.2s;">✕</button>
                     </div>
                 </div>
+
+                <!-- NEW: Integrated Scroll Container -->
                 <div class="cm-scroll-container" style="position:relative;">
-                    <div id="DCM-BODY" style="padding:16px 20px; line-height:1.6; font-size:0.95rem; color:#d1d5db; height:240px; overflow-y:auto; scrollbar-width:none; position:relative; scroll-behavior:smooth;"></div>
-                    <div id="DCM-RIBBON" class="modal-scroll-ribbon">
+                    <div id="DCM-SCROLL-VIEWPORT" style="max-height: 70vh; overflow-y: auto; scrollbar-width: none; position: relative; scroll-behavior: smooth;">
+                        
+                        <div id="DCM-BODY" style="padding:16px 20px; line-height:1.6; font-size:0.95rem; color:#d1d5db;"></div>
+                        
+                        <!-- Image Preview Section -->
+                        <div id="DCM-IMAGE-SECTION" style="padding:0 20px; display:none;">
+                            <div class="cm-image-preview-container">
+                                <img id="DCM-PREVIEW" class="cm-image-preview" src="" alt="Post Preview">
+                                <div id="DCM-PREVIEW-PLACEHOLDER" style="font-size:0.8rem; opacity:0.5;">No Image Selected</div>
+                            </div>
+                        </div>
+
+                        <div class="cm-image-controls" style="padding:0 20px; display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+                            <button id="DCM-TOGGLE-PHOTO" class="cm-btn-secondary" title="Toggle Photo Section" style="flex:0; padding:10px;">
+                                <span id="DCM-PHOTO-ICON">🖼️</span> <span id="DCM-PHOTO-TEXT" style="display:none;">With Photo</span>
+                            </button>
+                            <button id="DCM-AI-GENERATE" class="cm-btn-secondary" style="background:rgba(124,111,255,0.2); border-color:rgba(124,111,255,0.4); color:#a78bfa; flex:1.2; min-width:110px; font-weight:700; display:none; border-width:2px;">
+                                ✨ AI Photos
+                            </button>
+                            <button id="DCM-OPEN-GALLERY" class="cm-btn-secondary" style="display:none; flex:1; min-width:80px;">
+                                📁 Gallery
+                            </button>
+                            <button id="DCM-UPLOAD-PHOTO" class="cm-btn-secondary" style="display:none; flex:1; min-width:80px;">
+                                📤 Upload
+                            </button>
+                            <button id="DCM-REMOVE-PHOTO" class="cm-btn-secondary" style="display:none; background:rgba(248,113,113,0.1); color:#f87171; border-color:rgba(248,113,113,0.2); flex:0; padding:10px;">
+                                🗑️
+                            </button>
+                        </div>
+                        
+                        <div id="DCM-DOWNLOAD-WRAP" style="padding:12px 20px 0; display:none;">
+                            <button id="DCM-DOWNLOAD-BTN" class="cm-btn-download">
+                                📥 Download Image for Sharing
+                            </button>
+                        </div>
+
+                        <!-- Feedback Message -->
+                        <div style="text-align:center; height:20px; margin-top:12px;">
+                            <span id="DCM-FEEDBACK" style="font-size:0.8rem; color:#43d08a; font-weight:600; opacity:0; transition:0.3s; display:inline-block;">Copied!</span>
+                        </div>
+
+                        <!-- Social Sharing Section -->
+                        <div style="padding:8px 20px; text-align:center;">
+                            <p style="font-size:0.75rem; color:#9ca3af; margin:0 0 10px;">
+                                💡 Tip: <a href="#" id="DCM-LINK-PROFILES" style="color:#7c6fff; text-decoration:none; border-bottom:1px dashed #7c6fff;">Link social profiles</a> for easier sharing
+                            </p>
+                            <div style="display:flex; align-items:center; gap:12px; justify-content:center; flex-wrap:wrap;">
+                                <button id="DCM-X" title="Share on X (Twitter)" style="background:#000; color:#fff; border:1px solid rgba(255,255,255,0.1); width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">𝕏</button>
+                                <button id="DCM-FB" title="Share on Facebook" style="background:#1877F2; color:#fff; border:none; width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">f</button>
+                                <button id="DCM-LI" title="Share on LinkedIn" style="background:#0077B5; color:#fff; border:none; width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">in</button>
+                                <button id="DCM-IG" title="Share on Instagram" style="background:linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); color:#fff; border:none; width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">📸</button>
+                            </div>
+                        </div>
+
+                        <!-- Auto Post Button -->
+                        <div id="DCM-AUTO-POST-WRAP" style="padding: 12px 20px 24px;">
+                            <button id="DCM-POST-ALL" style="width: 100%; padding: 12px; border-radius: 12px; background: linear-gradient(135deg, #7c6fff, #43d08a); border: none; color: #fff; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(124, 111, 255, 0.3); transition: 0.3s;">
+                                🚀 1-Click Post to All Linked Profiles
+                            </button>
+                        </div>
+
+                    </div> <!-- End DCM-SCROLL-VIEWPORT -->
+
+                    <div id="DCM-RIBBON" class="modal-scroll-ribbon" style="top: 0; bottom: 0;">
                         <div id="DCM-THUMB" class="modal-scroll-thumb"></div>
                     </div>
-                </div>
-                
-                <!-- Image Preview Section -->
-                <div id="DCM-IMAGE-SECTION" style="padding:0 20px; display:none;">
-                    <div class="cm-image-preview-container">
-                        <img id="DCM-PREVIEW" class="cm-image-preview" src="" alt="Post Preview">
-                        <div id="DCM-PREVIEW-PLACEHOLDER" style="font-size:0.8rem; opacity:0.5;">No Image Selected</div>
-                    </div>
-                </div>
+                </div> <!-- End cm-scroll-container -->
 
-                <div class="cm-image-controls" style="padding:0 20px; display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
-                    <button id="DCM-TOGGLE-PHOTO" class="cm-btn-secondary" title="Toggle Photo Section" style="flex:0; padding:10px;">
-                        <span id="DCM-PHOTO-ICON">🖼️</span> <span id="DCM-PHOTO-TEXT" style="display:none;">With Photo</span>
-                    </button>
-                    <button id="DCM-AI-GENERATE" class="cm-btn-secondary" style="background:rgba(124,111,255,0.2); border-color:rgba(124,111,255,0.4); color:#a78bfa; flex:1.2; min-width:110px; font-weight:700; display:none; border-width:2px;">
-                        ✨ AI Photos
-                    </button>
-                    <button id="DCM-OPEN-GALLERY" class="cm-btn-secondary" style="display:none; flex:1; min-width:80px;">
-                        📁 Gallery
-                    </button>
-                    <button id="DCM-UPLOAD-PHOTO" class="cm-btn-secondary" style="display:none; flex:1; min-width:80px;">
-                        📤 Upload
-                    </button>
-                    <button id="DCM-REMOVE-PHOTO" class="cm-btn-secondary" style="display:none; background:rgba(248,113,113,0.1); color:#f87171; border-color:rgba(248,113,113,0.2); flex:0; padding:10px;">
-                        🗑️
-                    </button>
-                </div>
-                
-                <div id="DCM-DOWNLOAD-WRAP" style="padding:0 20px; display:none;">
-                    <button id="DCM-DOWNLOAD-BTN" class="cm-btn-download">
-                        📥 Download Image for Sharing
-                    </button>
-                </div>
-                <!-- Feedback Message -->
-                <div style="text-align:center; height:20px; margin-bottom:4px; margin-top:12px;">
-                    <span id="DCM-FEEDBACK" style="font-size:0.8rem; color:#43d08a; font-weight:600; opacity:0; transition:0.3s; display:inline-block;">Copied!</span>
-                </div>
-                <!-- Social Sharing Section -->
-                <div style="padding:0 20px 8px; text-align:center;">
-                    <p style="font-size:0.7rem; color:#9ca3af; margin:0 0 8px;">
-                        💡 Tip: <a href="#" id="DCM-LINK-PROFILES" style="color:#7c6fff; text-decoration:none; border-bottom:1px dashed #7c6fff;">Link social profiles</a> for easier sharing
-                    </p>
-                    <div style="display:flex; align-items:center; gap:12px; justify-content:center; flex-wrap:wrap;">
-                        <button id="DCM-X" title="Share on X (Twitter)" style="background:#000; color:#fff; border:1px solid rgba(255,255,255,0.1); width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">𝕏</button>
-                        <button id="DCM-FB" title="Share on Facebook" style="background:#1877F2; color:#fff; border:none; width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">f</button>
-                        <button id="DCM-LI" title="Share on LinkedIn" style="background:#0077B5; color:#fff; border:none; width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">in</button>
-                        <button id="DCM-IG" title="Share on Instagram" style="background:linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); color:#fff; border:none; width:26px; height:26px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8rem; transition:0.2s;">📸</button>
-                    </div>
-                </div>
-                <!-- Auto Post Button (Shown always, with warning if no links) -->
-                <div id="DCM-AUTO-POST-WRAP" style="padding: 0 20px 16px;">
-                    <button id="DCM-POST-ALL" style="width: 100%; padding: 12px; border-radius: 12px; background: linear-gradient(135deg, #7c6fff, #43d08a); border: none; color: #fff; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(124, 111, 255, 0.3); transition: 0.3s;">
-                        🚀 1-Click Post to All Linked Profiles
-                    </button>
-                </div>
+            </div>
             </div>
         `;
         document.body.appendChild(this.overlay);
@@ -1143,36 +1155,39 @@ const ContentUI = {
         };
 
         // Modal Ribbon Sync
-        const body = this.body;
+        const viewport = document.getElementById('DCM-SCROLL-VIEWPORT');
         const ribbon = document.getElementById('DCM-RIBBON');
         const thumb = document.getElementById('DCM-THUMB');
         
-        if (body && ribbon && thumb) {
+        if (viewport && ribbon && thumb) {
             const updateModalThumb = () => {
-                const scrollHeight = body.scrollHeight - body.clientHeight;
-                if (scrollHeight <= 0) {
+                const scrollHeight = viewport.scrollHeight - viewport.clientHeight;
+                if (scrollHeight <= 5) { // Small buffer for rounding
                     ribbon.style.display = 'none';
                     return;
                 }
                 ribbon.style.display = 'block';
-                const scrolled = (body.scrollTop / scrollHeight) * 100;
+                const scrolled = (viewport.scrollTop / scrollHeight) * 100;
+                // Move thumb
                 const maxTop = ribbon.clientHeight - thumb.clientHeight;
-                thumb.style.top = (scrolled / 100) * maxTop + 'px';
+                thumb.style.top = Math.max(0, Math.min(maxTop, (scrolled / 100) * maxTop)) + 'px';
             };
 
-            body.addEventListener('scroll', updateModalThumb);
+            viewport.addEventListener('scroll', updateModalThumb);
             
             // Click on ribbon to scroll
             ribbon.onclick = (e) => {
                 const rect = ribbon.getBoundingClientRect();
                 const y = e.clientY - rect.top;
                 const percentage = y / rect.height;
-                body.scrollTop = percentage * (body.scrollHeight - body.clientHeight);
+                viewport.scrollTop = percentage * (viewport.scrollHeight - viewport.clientHeight);
             };
 
-            // Observer to handle content changes
-            const observer = new MutationObserver(updateModalThumb);
-            observer.observe(body, { childList: true, subtree: true, characterData: true });
+            // Observer to handle content changes (includes image loading/visibility toggles)
+            const observer = new MutationObserver(() => {
+                setTimeout(updateModalThumb, 50); // Small delay to allow layout to settle
+            });
+            observer.observe(viewport, { childList: true, subtree: true, characterData: true, attributes: true });
             
             // Initial update
             setTimeout(updateModalThumb, 100);
@@ -1255,22 +1270,30 @@ const ContentUI = {
         img.crossOrigin = "anonymous";
         
         img.onload = () => {
-            // High Resolution Setup
+            // High Resolution Setup & Dynamic Aspect Ratio
+            const naturalRatio = img.width / img.height;
             canvas.width = 1080;
-            canvas.height = 1350; // Portrait / Instagram size
+            // Use image ratio if available, otherwise default to portrait 1080x1350
+            canvas.height = Math.round(1080 / naturalRatio);
+            
+            // Limit height to prevent absurdly tall images (max 1920)
+            if (canvas.height > 1920) canvas.height = 1920;
+            // Ensure minimum height (min 1080)
+            if (canvas.height < 1080) canvas.height = 1080;
+
+            console.log("🎨 Canvas dimensions set to:", canvas.width, "x", canvas.height, "Ratio:", naturalRatio);
             
             // Background Image (Cover style)
-            const imgRatio = img.width / img.height;
             const canvasRatio = canvas.width / canvas.height;
             let drawW, drawH, drawX, drawY;
-            if (imgRatio > canvasRatio) {
+            if (naturalRatio > canvasRatio) {
                 drawH = canvas.height;
-                drawW = canvas.height * imgRatio;
+                drawW = canvas.height * naturalRatio;
                 drawX = (canvas.width - drawW) / 2;
                 drawY = 0;
             } else {
                 drawW = canvas.width;
-                drawH = canvas.width / imgRatio;
+                drawH = canvas.width / naturalRatio;
                 drawX = 0;
                 drawY = (canvas.height - drawH) / 2;
             }
