@@ -191,6 +191,15 @@ app.get('/health', (req, res) => {
     });
 });
 
+app.get('/api/debug-db', (req, res) => {
+    res.json({
+        dbConnected,
+        mongooseState: mongoose.connection.readyState,
+        uri: MONGODB_URI ? `${MONGODB_URI.split('@')[1]}` : 'none',
+        time: new Date().toISOString()
+    });
+});
+
 app.get('/api/ping', (req, res) => {
     res.json({ status: 'warm', timestamp: new Date().toISOString() });
 });
