@@ -299,6 +299,11 @@
                         </div>
                     </div>
 
+                    <div id="phone-exists-msg" style="display:none; background: rgba(99, 102, 241, 0.15); border: 1px solid var(--accent-main); border-radius: 12px; padding: 12px; margin-bottom: 20px; text-align: center;">
+                        <p style="font-size: 0.875rem; color: #fff; margin-bottom: 8px;">👋 This number is already registered!</p>
+                        <button type="button" onclick="showStep('step-login')" class="btn-primary" style="padding: 8px 16px; font-size: 0.8125rem; width: auto; margin: 0 auto; display: block;">Login Instead</button>
+                    </div>
+
                     <div id="registration-fields">
                         <div class="form-grid">
                             <div class="form-group">
@@ -532,10 +537,8 @@
 
         function checkPhoneInput() {
             const phoneVal = document.getElementById('login-phone').value.trim();
-            if (phoneVal.length >= 10) {
+            if (phoneVal.length === 10) {
                 checkExistingPhone();
-            } else {
-                document.getElementById('registration-fields').style.display = 'none';
             }
         }
 
@@ -552,9 +555,10 @@
             const localUser = allUsers.find(u => norm(u.phone) === normPhone);
 
             if (localUser) {
-                alert(`Welcome back ${localUser.name}! This number is already registered.\n\nPlease sign in.`);
-                showStep('step-login');
-                document.getElementById('auth-id').value = localUser.loginId;
+                const msg = document.getElementById('phone-exists-msg');
+                if (msg) msg.style.display = 'block';
+                document.getElementById('registration-fields').style.opacity = '0.5';
+                document.getElementById('registration-fields').style.pointerEvents = 'none';
                 return;
             }
 
@@ -568,9 +572,10 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data.exists) {
-                        alert(`Welcome back ${data.name}! Your account is already registered.\n\nPlease sign in with your ID.`);
-                        showStep('step-login');
-                        document.getElementById('auth-id').value = data.loginId;
+                        const msg = document.getElementById('phone-exists-msg');
+                        if (msg) msg.style.display = 'block';
+                        document.getElementById('registration-fields').style.opacity = '0.5';
+                        document.getElementById('registration-fields').style.pointerEvents = 'none';
                         return;
                     }
                 }
@@ -578,8 +583,11 @@
                 console.warn("Server check failed", err);
             }
 
-            // Show registration fields if not found
-            document.getElementById('registration-fields').style.display = 'block';
+            // Not found case: Hide any existing message
+            const msg = document.getElementById('phone-exists-msg');
+            if (msg) msg.style.display = 'none';
+            document.getElementById('registration-fields').style.opacity = '1';
+            document.getElementById('registration-fields').style.pointerEvents = 'auto';
         }
 
         // Store last generated creds globally for auto-fill
