@@ -163,22 +163,45 @@ async function checkSubscriptionStatus() {
 
     if (!user.phone) return;
 
-    // Show button originally, then handle state
+    const subKey = `importantDays_subscription_${user.phone}`;
+    const localSub = JSON.parse(localStorage.getItem(subKey) || 'null');
+    const now = new Date();
+
+    // 1. Initial State: Show button, handle footer
     if (subBtn) subBtn.style.setProperty('display', 'inline-flex', 'important');
     if (footerCta) {
         footerCta.onclick = () => showSubscriptionModal();
         footerCta.hidden = false;
     }
 
+    // 2. Local Cache Logic: If we have a valid local sub, update UI immediately
+    let hasActiveSub = false;
+    if (localSub && (localSub.status === 'active' || localSub.status === 'approved')) {
+        if (new Date(localSub.expiry) > now) {
+            hasActiveSub = true;
+            updateWelcomeBanner(); 
+            if (subBtn) subBtn.style.setProperty('display', 'none', 'important');
+            if (footerCta) footerCta.hidden = true;
+            if (subStatusBadge) {
+                subStatusBadge.style.display = 'inline-flex';
+                const displayType = localSub.type.charAt(0).toUpperCase() + localSub.type.slice(1);
+                subStatusBadge.innerHTML = `<span>💎</span> ${displayType} Subscription`;
+                subStatusBadge.style.background = 'rgba(67, 208, 138, 0.1)';
+                subStatusBadge.style.color = 'var(--accent-success)';
+            }
+        }
+    }
+
+    // 3. Background Sync: Fetch latest from server
     try {
         const res = await fetch(getApiUrl(`/api/subscription-status?mobile=${encodeURIComponent(user.phone)}`));
+        if (!res.ok) throw new Error("Server error");
         const sub = await res.json();
-        const now = new Date();
-        const subKey = `importantDays_subscription_${user.phone}`;
-
+        
         if (sub && (sub.status === 'active' || sub.status === 'approved')) {
             if (new Date(sub.expiry) > now) {
                 localStorage.setItem(subKey, JSON.stringify(sub));
+                hasActiveSub = true;
                 updateWelcomeBanner(); 
                 if (subBtn) subBtn.style.setProperty('display', 'none', 'important');
                 if (footerCta) footerCta.hidden = true;
@@ -189,53 +212,55 @@ async function checkSubscriptionStatus() {
                     subStatusBadge.style.background = 'rgba(67, 208, 138, 0.1)';
                     subStatusBadge.style.color = 'var(--accent-success)';
                 }
-                return;
             } else {
                 localStorage.removeItem(subKey);
+                hasActiveSub = false;
             }
         } else if (sub && sub.status === 'pending') {
             localStorage.setItem(subKey, JSON.stringify(sub));
+            hasActiveSub = false;
             if (subBtn) {
                 subBtn.innerHTML = "⏳ Pending with admin";
                 subBtn.style.background = "rgba(124, 111, 255, 0.1)";
                 subBtn.style.color = "var(--accent-1)";
-                subBtn.style.padding = "8px 20px";
             }
             if (footerCta) footerCta.hidden = true;
             if (subStatusBadge) {
-                subStatusBadge.classList.add('show');
-                subStatusBadge.innerHTML = `<span>⏳</span> Payment Pending`;
-                subStatusBadge.style.background = 'rgba(124, 111, 255, 0.1)';
                 subStatusBadge.style.display = 'inline-flex';
+                subStatusBadge.innerHTML = `<span>⏳</span> Payment Pending`;
             }
         } else if (sub && sub.status === 'rejected') {
             localStorage.setItem(subKey, JSON.stringify(sub));
+            hasActiveSub = false;
             if (subBtn) {
                 subBtn.innerHTML = "❌ Payment Rejected";
                 subBtn.style.background = "rgba(239, 68, 68, 0.1)";
                 subBtn.style.color = "#f87171";
-                subBtn.onclick = () => showSubscriptionModal(true);
             }
             if (subStatusBadge) {
                 subStatusBadge.style.display = 'inline-flex';
-                subStatusBadge.classList.add('show');
                 subStatusBadge.innerHTML = `<span>❌</span> Payment Rejected`;
-                subStatusBadge.style.background = 'rgba(239, 68, 68, 0.1)';
-                subStatusBadge.style.display = 'inline-flex';
             }
+        } else {
+            localStorage.removeItem(subKey);
+            hasActiveSub = false;
         }
     } catch (err) {
-        console.warn("Backend sync failed", err);
+        console.warn("Backend sync failed, using local status", err);
     }
 
-    // Trial check logic (if not active)
-    const regDate = new Date(user.createdAt || new Date());
-    const diffDays = Math.ceil(Math.abs(new Date() - regDate) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays > 10) {
-        lockMainContent();
+    // 4. Final Lock Check: Only lock if NO active subscription AND trial expired
+    if (!hasActiveSub) {
+        const regDate = new Date(user.createdAt || new Date());
+        const diffDays = Math.ceil(Math.abs(new Date() - regDate) / (1000 * 60 * 60 * 24));
+        if (diffDays > 10) {
+            lockMainContent();
+        }
+    } else {
+        // Ensure lock is removed if it was there (e.g. after sync)
+        const existingLock = document.getElementById('main-lock');
+        if (existingLock) existingLock.remove();
     }
-    // Trial info is shown in the welcome banner — no duplicate badge needed
 }
 async function checkPendingApprovals() {
     const activeUserObj = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
