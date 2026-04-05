@@ -90,7 +90,7 @@ const importantDays = [
   { date: "04-02", name: "World Autism Awareness Day", description: "Promotes understanding and acceptance of autism spectrum disorder.", category: CATEGORIES.HEALTH, emoji: "💙" },
   { date: "04-04", name: "International Day for Mine Awareness", description: "Promotes efforts to clear landmines and help victims worldwide.", category: CATEGORIES.INTERNATIONAL, emoji: "⚠️" },
   { date: "04-03", name: "Good Friday", description: "Christian commemoration of the crucifixion of Jesus Christ. Gazetted public holiday in India.", category: CATEGORIES.FESTIVAL, emoji: "✝️" },
-  { date: "04-06", name: "Hanuman Jayanti", description: "Celebrates the birth of Lord Hanuman — devotees observe fasting and temple prayers.", category: CATEGORIES.FESTIVAL, emoji: "🐒" },
+  { date: "04-02", name: "Hanuman Jayanti", description: "Birth anniversary of Lord Hanuman — celebrated across India with prayers, fasting and temple visits. In 2026, it falls on April 2nd.", category: CATEGORIES.FESTIVAL, emoji: "🐒" },
   { date: "04-07", name: "World Health Day", description: "Draws attention to global health issues, organized by the World Health Organization.", category: CATEGORIES.HEALTH, emoji: "🏥" },
   { date: "04-10", name: "World Homeopathy Day", description: "Celebrates the birth of Dr. Samuel Hahnemann and the system of homeopathy.", category: CATEGORIES.HEALTH, emoji: "🌿" },
   { date: "04-11", name: "World Parkinson's Disease Day", description: "Raises awareness about Parkinson's disease and its impact on individuals and families.", category: CATEGORIES.HEALTH, emoji: "🧠" },
