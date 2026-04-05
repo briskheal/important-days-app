@@ -791,7 +791,17 @@ app.get('/api/subscription-status', async (req, res) => {
         const { mobile } = req.query;
         if (!mobile) return res.status(400).send('Missing mobile');
 
-        const payment = await Payment.findOne({ mobile: normPhone(mobile) }).sort({ paidAt: -1 });
+        const s = normPhone(mobile);
+        if (!s) return res.status(400).send('Invalid phone');
+
+        // Fuzzy match: exact or last 10 digits
+        let query = { mobile: s };
+        if (s.length >= 10) {
+            const last10 = s.slice(-10);
+            query = { mobile: new RegExp(last10 + '$') };
+        }
+
+        const payment = await Payment.findOne(query).sort({ paidAt: -1 });
         if (payment) {
             res.json(payment);
         } else {
