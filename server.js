@@ -866,29 +866,35 @@ app.get('/api/content', async (req, res) => {
         // ── Helper: Call Gemini (multi-model fallback) ─────────────
         async function callGemini(customPrompt) {
             if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('your_gemini_key')) return null;
-            const MODELS = ['gemini-2.0-flash', 'gemini-flash-latest', 'gemini-2.0-flash-lite'];
+            // Model order: gemini-flash-latest works on free quota via v1beta
+            // gemini-2.0-flash has higher daily quota but resets at midnight
+            const MODELS = ['gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
             for (const model of MODELS) {
                 try {
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
                     const resp = await axios.post(url, {
                         contents: [{ parts: [{ text: customPrompt }] }],
-                        generationConfig: { temperature: 0.8, maxOutputTokens: 800 }
+                        generationConfig: { temperature: 0.8, maxOutputTokens: 1200 }
                     }, { timeout: 12000 });
                     const raw = resp.data.candidates[0].content.parts[0].text;
                     const clean = raw.replace(/```json|```/g, '').trim();
-                    const parsed = JSON.parse(clean);
+                    const start = clean.indexOf('{');
+                    const end = clean.lastIndexOf('}');
+                    if (start === -1 || end === -1) throw new Error('No JSON in Gemini response');
+                    const parsed = JSON.parse(clean.substring(start, end + 1));
                     console.log(`[OK] Gemini ${model} succeeded`);
                     return parsed;
                 } catch (e) {
                     const status = e.response?.status;
-                    if (status === 429) {
-                        console.warn(`[WARN] Gemini ${model} quota exhausted. Trying next model...`);
-                        continue; // try next model
+                    if (status === 429 || status === 404) {
+                        console.warn(`[WARN] Gemini ${model} unavailable (${status}). Trying next...`);
+                        continue;
                     }
-                    throw e; // re-throw non-quota errors
+                    console.warn(`[WARN] Gemini ${model} error: ${e.message}`);
+                    continue;
                 }
             }
-            console.warn('[WARN] All Gemini models quota-exhausted. Falling back to Pollinations.');
+            console.warn('[WARN] All Gemini models failed. Falling back to Pollinations.');
             return null;
         }
 
