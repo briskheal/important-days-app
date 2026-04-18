@@ -851,172 +851,210 @@ app.post('/api/notify-status', async (req, res) => {
     }
 });
 
-// 12. SMART AI CONTENT
+// 12. SMART AI CONTENT — Dual-Engine (Gemini + Pollinations Fusion)
 app.get('/api/content', async (req, res) => {
     try {
         const { name, category } = req.query;
         if (!name) return res.status(400).json({ error: "Missing name" });
 
-        console.log(`[INFO] Generating content for: ${name} (${category})`);
+        console.log(`[INFO] Dual-AI Content Request: ${name} (${category})`);
+
+        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+        const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+
+        // ── Helper: Call Gemini (multi-model fallback) ─────────────
+        async function callGemini(customPrompt) {
+            if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('your_gemini_key')) return null;
+            const MODELS = ['gemini-2.0-flash', 'gemini-flash-latest', 'gemini-2.0-flash-lite'];
+            for (const model of MODELS) {
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+                    const resp = await axios.post(url, {
+                        contents: [{ parts: [{ text: customPrompt }] }],
+                        generationConfig: { temperature: 0.8, maxOutputTokens: 800 }
+                    }, { timeout: 12000 });
+                    const raw = resp.data.candidates[0].content.parts[0].text;
+                    const clean = raw.replace(/```json|```/g, '').trim();
+                    const parsed = JSON.parse(clean);
+                    console.log(`[OK] Gemini ${model} succeeded`);
+                    return parsed;
+                } catch (e) {
+                    const status = e.response?.status;
+                    if (status === 429) {
+                        console.warn(`[WARN] Gemini ${model} quota exhausted. Trying next model...`);
+                        continue; // try next model
+                    }
+                    throw e; // re-throw non-quota errors
+                }
+            }
+            console.warn('[WARN] All Gemini models quota-exhausted. Falling back to Pollinations.');
+            return null;
+        }
+
+        // ── Helper: Call Pollinations (Free, No Key) ───────────────
+        async function callPollinations(customPrompt) {
+            // Use GET format: text.pollinations.ai/{prompt}?model=openai&seed=random
+            const seed = Math.floor(Math.random() * 9999);
+            const url = `https://text.pollinations.ai/${encodeURIComponent(customPrompt)}?model=openai&seed=${seed}&json=true`;
+            const resp = await axios.get(url, { timeout: 8000 });
+            const raw = typeof resp.data === 'string' ? resp.data : JSON.stringify(resp.data);
+            const clean = raw.replace(/```json|```/g, '').trim();
+            const start = clean.indexOf('{');
+            const end = clean.lastIndexOf('}');
+            if (start === -1 || end === -1) throw new Error('No JSON object in Pollinations response');
+            return JSON.parse(clean.substring(start, end + 1));
+        }
+
+        // ── Run BOTH in parallel ───────────────────────────────────
+        console.log(`[AI] Firing Gemini + Pollinations in parallel for: ${name}`);
+
+        const geminiPrompt = `Create 4 social media posts for "${name}" (${category}):
+1. LinkedIn/X: formal, insightful, 2-3 sentences
+2. WhatsApp: warm, personal, emotional, 2-3 sentences  
+3. Instagram: short punchy under 15 words with emojis
+4. Hinglish: Indian audience mix Hindi+English, 2 sentences
+
+Also 5 hashtags and 1 CTA.
+ONLY return valid JSON (no markdown): {"variants":["post1","post2","post3","post4"],"hashtags":"#h1 #h2 #h3 #h4 #h5","cta":"cta here"}`;
+
+        const pollinationsPrompt = `You are a creative storytelling expert. For the observance "${name}" (Category: ${category}), generate 2 unique content angles:
+1. STORYTELLING (a short compelling micro-story or narrative about this day — 3 sentences)
+2. DID YOU KNOW (a surprising fact or insightful perspective about this observance — 2 sentences)
+
+Return ONLY valid JSON: {"story":"...","fact":"...","bonus_hashtags":"#extra1 #extra2 #extra3"}`;
+
+        const [geminiResult, pollinationsResult] = await Promise.allSettled([
+            callGemini(geminiPrompt),
+            callPollinations(pollinationsPrompt)
+        ]);
 
         let variants = [];
-        let hashtags = "";
-        let cta = "";
+        let hashtags = '';
+        let cta = '';
         let isAi = false;
+        let freeSnippet = '';
 
-        const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-        const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-        // --- Step 1: Attempt AI Content (OpenAI GPT-4o-mini Preferred, Fallback to Claude) ---
-        if (OPENAI_API_KEY && !OPENAI_API_KEY.includes('your_openai_key')) {
-            try {
-                console.log(`[AI] Requesting GPT-4o-mini for: ${name}`);
-                const aiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-                    model: "gpt-4o-mini",
-                    messages: [{
-                        role: "system",
-                        content: "You are a professional social media content creator specializing in awareness for global and Indian events. Respond in JSON format."
-                    }, {
-                        role: "user",
-                        content: `Generate high-quality social media awareness content for "${name}" (Category: ${category}). 
-                        Provide exactly 4 variants (Professional, Emotional, Short, Creative), 5 hashtags, and 1 compelling CTA.
-                        JSON Format: {"variants": ["v1","v2","v3","v4"], "hashtags": "#tag1...", "cta": "..."}`
-                    }],
-                    response_format: { type: "json_object" },
-                    max_tokens: 1000
-                }, {
-                    headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-                    timeout: 8000
-                });
-
-                if (aiResponse.data.choices[0].message.content) {
-                    const aiData = JSON.parse(aiResponse.data.choices[0].message.content);
-                    if (aiData.variants && aiData.variants.length >= 4) {
-                        variants = aiData.variants;
-                        hashtags = aiData.hashtags;
-                        cta = aiData.cta;
-                        isAi = true;
-                        console.log(`[OK] GPT-4o-mini content generated for ${name}`);
-                    }
-                }
-            } catch (err) { console.warn(`[WARN] GPT-4o-mini fail: ${err.message}. Trying Claude...`); }
+        // ── Process Gemini output ──────────────────────────────────
+        if (geminiResult.status === 'fulfilled' && geminiResult.value?.variants?.length >= 4) {
+            const g = geminiResult.value;
+            variants = g.variants;
+            hashtags = g.hashtags || '';
+            cta = g.cta || '';
+            isAi = true;
+            console.log(`[OK] Gemini delivered ${variants.length} variants`);
+        } else {
+            console.warn(`[WARN] Gemini failed: ${geminiResult.reason?.message || 'unknown'}`);
         }
 
+        // ── Process Pollinations output & FUSE ────────────────────
+        if (pollinationsResult.status === 'fulfilled' && pollinationsResult.value) {
+            const p = pollinationsResult.value;
+            console.log(`[OK] Pollinations delivered story + fact`);
+
+            const storyVariant = p.story ? `📖 ${p.story}` : null;
+            const factVariant = p.fact ? `💡 ${p.fact}` : null;
+
+            // Append Pollinations creative variants to Gemini's 4
+            if (storyVariant) variants.push(storyVariant);
+            if (factVariant) variants.push(factVariant);
+
+            // Merge & dedupe hashtags
+            if (p.bonus_hashtags) {
+                const allTags = new Set([
+                    ...hashtags.split(' ').filter(Boolean),
+                    ...p.bonus_hashtags.split(' ').filter(Boolean)
+                ]);
+                hashtags = [...allTags].slice(0, 8).join(' ');
+            }
+
+            // Use story as the free snippet for the card preview
+            freeSnippet = p.story || p.fact || '';
+            isAi = true;
+        } else {
+            console.warn(`[WARN] Pollinations failed: ${pollinationsResult.reason?.message || 'unknown'}`);
+        }
+
+        // ── Fallback: OpenAI if both failed ───────────────────────
+        if (!isAi && OPENAI_API_KEY && !OPENAI_API_KEY.includes('your_openai_key')) {
+            try {
+                const aiResp = await axios.post('https://api.openai.com/v1/chat/completions', {
+                    model: "gpt-4o-mini",
+                    messages: [
+                        { role: "system", content: "You are a professional social media content creator. Respond in JSON." },
+                        { role: "user", content: `Create 4 social media variants for "${name}" (${category}). JSON: {"variants":["v1","v2","v3","v4"],"hashtags":"#h1...","cta":"..."}` }
+                    ],
+                    response_format: { type: "json_object" }, max_tokens: 900
+                }, { headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` }, timeout: 8000 });
+                const d = JSON.parse(aiResp.data.choices[0].message.content);
+                if (d.variants?.length >= 4) { variants = d.variants; hashtags = d.hashtags; cta = d.cta; isAi = true; }
+            } catch (e) { console.warn(`[WARN] OpenAI fail: ${e.message}`); }
+        }
+
+        // ── Fallback: Claude if still nothing ─────────────────────
         if (!isAi && ANTHROPIC_API_KEY && !ANTHROPIC_API_KEY.includes('your_anthropic_key')) {
             try {
-                console.log(`[AI] Requesting Claude 3.5 Haiku for: ${name}`);
-                const aiResponse = await axios.post('https://api.anthropic.com/v1/messages', {
-                    model: "claude-3-5-haiku-20241022",
-                    max_tokens: 1000,
-                    messages: [{
-                        role: "user",
-                        content: `Generate social media awareness content for an observance called "${name}" (Category: ${category}). 
-                        
-                        Give me exactly 4 variants:
-                        1. PROFESSIONAL: Informative and formal for LinkedIn/X.
-                        2. EMOTIONAL: Heartfelt and personal for WhatsApp/Facebook.
-                        3. SHORT: Concise, punchy, and modern for Instagram/SMS.
-                        4. CREATIVE: A fun, unique, or storytelling perspective.
-
-                        Also provide:
-                        - A set of 5 relevant hashtags.
-                        - A compelling Call to Action (CTA).
-
-                        FORMAT YOUR RESPONSE AS JSON:
-                        {
-                          "variants": ["var1", "var2", "var3", "var4"],
-                          "hashtags": "#tag1 #tag2...",
-                          "cta": "your cta here"
-                        }`
-                    }]
-                }, {
-                    headers: {
-                        'x-api-key': ANTHROPIC_API_KEY,
-                        'anthropic-version': '2023-06-01',
-                        'content-type': 'application/json'
-                    },
-                    timeout: 8000
-                });
-
-                if (aiResponse.data && aiResponse.data.content && aiResponse.data.content[0]) {
-                    const aiRaw = aiResponse.data.content[0].text;
-                    const aiData = JSON.parse(aiRaw.substring(aiRaw.indexOf('{'), aiRaw.lastIndexOf('}') + 1));
-                    
-                    if (aiData.variants && aiData.variants.length >= 4) {
-                        variants = aiData.variants;
-                        hashtags = aiData.hashtags;
-                        cta = aiData.cta;
-                        isAi = true;
-                        console.log(`[OK] Claude AI content generated for ${name}`);
-                    }
-                }
-            } catch (aiErr) {
-                console.warn(`[WARN] Claude AI failed: ${aiErr.message}. Falling back to templates.`);
-            }
+                const aiResp = await axios.post('https://api.anthropic.com/v1/messages', {
+                    model: "claude-3-5-haiku-20241022", max_tokens: 900,
+                    messages: [{ role: "user", content: `Create 4 social media variants for "${name}" (${category}). JSON: {"variants":["v1","v2","v3","v4"],"hashtags":"#h1...","cta":"..."}` }]
+                }, { headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }, timeout: 8000 });
+                const raw = aiResp.data.content[0].text;
+                const d = JSON.parse(raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+                if (d.variants?.length >= 4) { variants = d.variants; hashtags = d.hashtags; cta = d.cta; isAi = true; }
+            } catch (e) { console.warn(`[WARN] Claude fail: ${e.message}`); }
         }
 
-        // --- Step 2: Fallback Logic (Templates & Wikipedia) ---
+
+        // ── Step 2: Template + Wikipedia fallback if ALL AI failed ────────────
         if (!isAi) {
-            // Variant 1: Template-based
-            let templateContent = "";
+            console.log(`[FALLBACK] Both Gemini+Pollinations failed. Using templates for: ${name}`);
+            let templateContent = '';
             switch (category) {
-                case "Festival":
-                    templateContent = `✨ Happy ${name}! Celebrate this beautiful festival with your loved ones. Spread joy, happiness, and traditional values today!`;
-                    hashtags = `#${(name || '').replace(/\s/g, '')} #Festival #Joy #Celebration #FestiveVibes`;
+                case 'Festival':
+                    templateContent = `✨ Happy ${name}! Celebrate with loved ones. Spread joy, happiness, and traditional values today!`;
+                    hashtags = `#${(name||'').replace(/\s/g,'')} #Festival #Joy #Celebration #FestiveVibes`;
                     cta = `🎈 Share the festive spirit with everyone!`;
                     break;
-                case "Health":
-                    templateContent = `💪 Today is ${name}. Health is your greatest wealth. Let's take a pledge to stay fit, stay aware, and build a healthier future together!`;
-                    hashtags = `#${(name || '').replace(/\s/g, '')} #Health #Wellness #Awareness #HealthyLiving`;
+                case 'Health':
+                    templateContent = `💪 Today is ${name}. Health is your greatest wealth. Stay fit, stay aware, build a healthier future!`;
+                    hashtags = `#${(name||'').replace(/\s/g,'')} #Health #Wellness #Awareness #HealthyLiving`;
                     cta = `💙 Spread health awareness and inspire others!`;
                     break;
-                case "India-National":
-                    templateContent = `🇮🇳 Observing ${name}. Proud of our heritage and the values this day represents. A time to reflect on our history and future. Jai Hind!`;
-                    hashtags = `#${(name || '').replace(/\s/g, '')} #India #NationalPride #Heritage #Bharat #JaiHind`;
+                case 'India-National':
+                    templateContent = `🇮🇳 Observing ${name}. Proud of our heritage. A time to reflect on history and future. Jai Hind!`;
+                    hashtags = `#${(name||'').replace(/\s/g,'')} #India #NationalPride #Heritage #JaiHind`;
                     cta = `🇮🇳 Share with pride and honor!`;
                     break;
                 default:
-                    templateContent = `📅 Today is ${name}. An important day to reflect on the values and awareness it brings to our lives and society globally.`;
-                    hashtags = `#${(name || '').replace(/\s/g, '')} #ImportantDay #Awareness #Knowledge #Significance`;
+                    templateContent = `📅 Today is ${name}. An important day to reflect on the values and awareness it brings to society globally.`;
+                    hashtags = `#${(name||'').replace(/\s/g,'')} #ImportantDay #Awareness #Knowledge #Significance`;
                     cta = `✨ Share this knowledge and spread importance!`;
             }
             variants.push(templateContent);
-
-            // Variant 2: Generic Awareness / Educational
-            variants.push(`🔍 Did you know today is ${name}? It's a day dedicated to raising awareness, celebrating milestones, and understanding the deep significance of this event. Let's make a positive impact together by sharing the word!`);
-
-            // Variant 3: Global Impact & Legacy
-            variants.push(`🌍 ${name} is more than just a date on the calendar; it's a testament to our global heritage and the ongoing efforts to create a better world. Its legacy inspires us to continue advocate for positive change and community strength.`);
-
-            // Variant 4: Wikipedia-based (Rich Content)
+            variants.push(`🔍 Did you know today is ${name}? A day dedicated to raising awareness and celebrating milestones. Make a positive impact by sharing!`);
+            variants.push(`🌍 ${name} is more than a date — it's a testament to our global heritage and ongoing efforts for a better world.`);
             try {
-                const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name.replace(/ /g, "_"))}`;
-                const wikiRes = await axios.get(wikiUrl, {
-                    headers: { 'User-Agent': 'ImportantDaysApp/1.5 (https://important-days.onrender.com; contact@example.com)' },
-                    timeout: 5000
-                });
-                const wikiData = wikiRes.data;
-                if (wikiData && wikiData.extract) {
-                    let summary = wikiData.extract.trim();
-                    if (summary.length > 500) summary = summary.substring(0, 497) + "...";
-                    variants.push(summary);
-                    console.log(`[OK] Wikipedia content added for ${name}`);
+                const wikiRes = await axios.get(
+                    `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name.replace(/ /g,'_'))}`,
+                    { headers: { 'User-Agent': 'ImportantDaysApp/2.0' }, timeout: 5000 }
+                );
+                if (wikiRes.data?.extract) {
+                    let s = wikiRes.data.extract.trim();
+                    if (s.length > 500) s = s.substring(0, 497) + '…';
+                    variants.push(s);
                 }
             } catch (e) {
-                console.warn(`[WARN] Wiki fetch failed for ${name}: ${e.message}`);
-                variants.push(`🌟 Let's take a moment to acknowledge the importance of ${name}. Whether it's through learning more about its history or sharing its values with others, every small action counts in making this day meaningful.`);
+                variants.push(`🌟 Let's acknowledge ${name}. Learning about its history and sharing its values makes every day meaningful.`);
             }
-
-            // Ensure we always have at least 4 variants
             while (variants.length < 4) {
-                variants.push(`🌈 Celebrating ${name} today! A perfect opportunity to learn, grow, and share the significance of this special observance with your network.`);
+                variants.push(`🌈 Celebrating ${name} today! Share the significance of this special observance with your network.`);
             }
         }
 
-        // Add a freeSnippet for the Quick Fact section in app.js
-        const freeSnippet = variants[0];
-
-        res.json({ status: "success", variants, hashtags, cta, freeSnippet, isAi });
+        // freeSnippet: prefer Pollinations story/fact, else first variant
+        const finalFreeSnippet = freeSnippet || variants[0] || '';
+        console.log(`[DONE] ${variants.length} variants | AI=${isAi} | for: ${name}`);
+        res.json({ status: 'success', variants, hashtags, cta, freeSnippet: finalFreeSnippet, isAi });
     } catch (err) {
         console.error("AI Content Error:", err);
         res.status(500).json({ error: "Failed to generate content" });

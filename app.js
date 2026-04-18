@@ -1918,7 +1918,7 @@ function isUserSubscribed() {
     if (user.phone && approvedSubs[user.phone]) return true;
 
     // Active paid subscription
-    if (sub && sub.status === 'active' && new Date(sub.expiry) > now) return true;
+    if (sub && (sub.status === 'active' || sub.status === 'approved') && new Date(sub.expiry) > now) return true;
 
     // Still in 10-day trial
     if (user.createdAt) {
@@ -1937,7 +1937,7 @@ function isPaidSubscriber() {
     const now = new Date();
 
     if (user.phone && approvedSubs[user.phone]) return true;
-    if (sub && sub.status === 'active' && new Date(sub.expiry) > now) return true;
+    if (sub && (sub.status === 'active' || sub.status === 'approved') && new Date(sub.expiry) > now) return true;
 
     return false;
 }
