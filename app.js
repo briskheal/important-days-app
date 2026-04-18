@@ -1011,8 +1011,11 @@ const ContentUI = {
                         <h3 id="DCM-TITLE" style="margin:0; font-family:'Outfit',sans-serif; font-size:1.1rem; font-weight:700;">Content</h3>
                     </div>
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <button id="DCM-REFRESH" title="See Next Variant" style="background:linear-gradient(135deg, #7c6fff, #4cc9f0); color:#fff; border:none; padding:10px 20px; border-radius:50px; cursor:pointer; font-weight:800; font-size:0.85rem; display:none; align-items:center; gap:8px; transition:0.3s; box-shadow: 0 4px 15px rgba(124, 111, 255, 0.3); transform: scale(1.05);">
-                            <span>🔄</span> Next Variant
+                        <button id="DCM-REFRESH" title="See Next Variant" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border:none; padding:8px 16px; border-radius:50px; cursor:pointer; font-weight:700; font-size:0.8rem; display:none; align-items:center; gap:6px; transition:0.3s;">
+                            <span>🔄</span> Next
+                        </button>
+                        <button id="DCM-REGEN-IMAGE" title="Regenerate Image for this Text" style="background:linear-gradient(135deg, #7c6fff, #4cc9f0); color:#fff; border:none; padding:8px 16px; border-radius:50px; cursor:pointer; font-weight:800; font-size:0.8rem; display:none; align-items:center; gap:6px; transition:0.3s; box-shadow: 0 4px 15px rgba(124, 111, 255, 0.3);">
+                            <span>🎨</span> Refresh Image
                         </button>
                         <button id="DCM-CLOSE" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#9ca3af; width:36px; height:36px; border-radius:50%; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; transition:0.2s;">✕</button>
                     </div>
@@ -1233,6 +1236,16 @@ const ContentUI = {
                 console.warn("Next Variant: Only one variant available.");
             }
         };
+
+        const regenBtn = document.getElementById('DCM-REGEN-IMAGE');
+        if (regenBtn) {
+            regenBtn.onclick = () => {
+                const text = this.variants[this.currentIndex];
+                this.selectedImage = null; // Clear so autoGenerate works
+                this.autoGenerateLinkedPhoto(text);
+                this.showFeedback("✨ Re-generating photo for this text...");
+            };
+        }
 
         // Modal Ribbon Sync
         const viewport = document.getElementById('DCM-SCROLL-VIEWPORT');
@@ -1486,24 +1499,21 @@ const ContentUI = {
             this.showAiPhotoSelector(platform);
         };
     },
+    getEssenceKeywords(t, title) {
+        const stops = new Set(['today', 'the', 'this', 'that', 'with', 'for', 'from', 'your', 'will', 'have', 'were', 'those', 'also', 'some', 'very', 'than', 'into', 'just', 'only', 'more', 'about', 'daily', 'global', 'india', 'celebration', 'celebrations', 'importance', 'awareness']);
+        const dayWords = (title || '').toLowerCase().split(/\s+/);
+        const words = (t || '').toLowerCase()
+            .replace(/[^a-z\s]/g, '')
+            .split(/\s+/)
+            .filter(w => w.length > 3 && !stops.has(w) && !dayWords.includes(w));
+        
+        // Prioritize middle-of-text words which usually contain the 'meat'
+        return [...new Set(words)].slice(0, 5).join(' ');
+    },
     showAiPhotoSelector(platform) {
         const title = this.title?.textContent || 'Important Day';
         const text = this.variants[this.currentIndex] || '';
-        
-        // Advanced Keyword Extraction
-        const getEssenceKeywords = (t) => {
-            const stops = new Set(['today', 'the', 'this', 'that', 'with', 'for', 'from', 'your', 'will', 'have', 'were', 'those', 'also', 'some', 'very', 'than', 'into', 'just', 'only', 'more', 'about', 'daily', 'global', 'india', 'celebration', 'celebrations', 'importance', 'awareness']);
-            const dayWords = title.toLowerCase().split(/\s+/);
-            const words = t.toLowerCase()
-                .replace(/[^a-z\s]/g, '')
-                .split(/\s+/)
-                .filter(w => w.length > 3 && !stops.has(w) && !dayWords.includes(w));
-            
-            // Prioritize middle-of-text words which usually contain the 'meat'
-            return [...new Set(words)].slice(0, 5).join(' ');
-        };
-
-        const essence = getEssenceKeywords(text);
+        const essence = this.getEssenceKeywords(text, title);
         let providerIndex = 0;
         let currentSeed = Math.floor(Math.random() * 1000000);
         const providers = ['ai', 'real', 'picsum'];
@@ -1517,10 +1527,10 @@ const ContentUI = {
                 const styles = ['digital art, vibrant colors', 'cinematic lighting, masterpiece', 'minimalist vector style', 'highly detailed photography'];
                 const style = styles[idx % styles.length];
                 const prompt = `${title}: ${essence}, ${style}, high resolution, 8k, trending on artstation, no text, clean composition`;
-                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${currentSeed}&nologo=true&model=flux`;
+                return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${currentSeed}&nologo=true&model=flux`;
             } else if (type === 'real') {
                 const prompt = `Realistic professional photography of a scene representing ${title} (${essence}), high resolution, 8k, award winning photo, national geographic style`;
-                return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${currentSeed}&nologo=true&model=flux`;
+                return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${currentSeed}&nologo=true&model=flux`;
             } else {
                 return `https://picsum.photos/seed/${currentSeed}/${w}/${h}`;
             }
@@ -1768,6 +1778,65 @@ const ContentUI = {
             }
             _lastContentText = text;
             this.updatePhotoUI();
+
+            // ── AUTO-GENERATE AI PHOTO LINKED TO THE TEXT ────────────────────
+            // Automatically generate one from the content box text
+            if (!this.selectedImage && this.withPhoto) {
+                this.autoGenerateLinkedPhoto(text);
+            }
+        }
+    },
+    autoGenerateLinkedPhoto(text) {
+        const title = this.title?.textContent || 'Important Day';
+        const essence = this.getEssenceKeywords(text || '', title);
+        const seed = Math.floor(Math.random() * 999999);
+        const w = this.aiDimensions.width;
+        const h = this.aiDimensions.height;
+
+        // Create a rich prompt from the event title and content essence
+        const prompt = `${title}${essence ? ': ' + essence : ''}, meaningful symbolic awareness illustration, cinematic photography, vibrant colors, high resolution, 8k, artstation quality, no text`;
+        const aiUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true&model=flux`;
+
+        // Show shimmer placeholder while loading
+        const section = document.getElementById('DCM-IMAGE-SECTION');
+        const preview = document.getElementById('DCM-PREVIEW');
+        const placeholder = document.getElementById('DCM-PREVIEW-PLACEHOLDER');
+        if (section && preview && placeholder) {
+            section.style.display = 'block';
+            placeholder.style.display = 'block';
+            placeholder.innerHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px;">
+                    <div style="width:40px;height:40px;border:3px solid rgba(124,111,255,0.5);border-top-color:#7c6fff;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                    <span style="font-size:0.8rem;color:#a78bfa;font-weight:600;">✨ Generating AI Photo for "${escHtml(title)}"...</span>
+                </div>
+            `;
+            preview.style.display = 'none';
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                this.selectedImage = aiUrl;
+                preview.src = aiUrl;
+                preview.style.display = 'block';
+                preview.style.opacity = '0';
+                placeholder.style.display = 'none';
+                // Fade in
+                setTimeout(() => { preview.style.transition = 'opacity 0.5s'; preview.style.opacity = '1'; }, 50);
+                this.updatePhotoUI();
+                this.showFeedback('✨ AI Photo Auto-Generated!');
+                console.log('[AI Photo] Auto-generated for:', title);
+            };
+            img.onerror = () => {
+                // Silently fall back — use picsum as a graceful placeholder
+                const fallbackUrl = `https://picsum.photos/seed/${seed}/${w}/${h}`;
+                this.selectedImage = fallbackUrl;
+                preview.src = fallbackUrl;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                this.updatePhotoUI();
+                console.warn('[AI Photo] Pollinations failed, using Picsum fallback');
+            };
+            img.src = aiUrl;
         }
     },
     updatePhotoUI() {
@@ -1800,7 +1869,7 @@ const ContentUI = {
             if (this.selectedImage) {
                 // If it's a Pollinations AI image, ensure the dimensions in the URL match the current settings
                 let displayUrl = this.selectedImage;
-                if (displayUrl.includes('pollinations.ai/p/')) {
+                if (displayUrl.includes('pollinations.ai/')) {
                     try {
                         const baseUrl = displayUrl.split('?')[0];
                         const searchStr = displayUrl.split('?')[1] || '';
@@ -1826,7 +1895,11 @@ const ContentUI = {
                 downloadWrap.style.display = 'none';
                 removeBtn.style.display = 'none';
             }
+            const regenBtn = document.getElementById('DCM-REGEN-IMAGE');
+            if (regenBtn) regenBtn.style.display = 'flex';
         } else {
+            const regenBtn = document.getElementById('DCM-REGEN-IMAGE');
+            if (regenBtn) regenBtn.style.display = 'none';
             section.style.display = 'none';
             galleryBtn.style.display = 'none';
             uploadBtn.style.display = 'none';
