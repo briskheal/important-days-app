@@ -1067,6 +1067,115 @@ Return ONLY valid JSON: {"story":"...","fact":"...","bonus_hashtags":"#extra1 #e
     }
 });
 
+// 13. EXTERNAL HOLIDAYS API (Dynamic fetching from Google Calendar & similar APIs)
+app.get('/api/external-holidays', async (req, res) => {
+    try {
+        const year = req.query.year || new Date().getFullYear();
+        const holidays = [];
+
+        // 1. Google Calendar API (via iCal payload) - Public Indian Holidays
+        try {
+            const ical = require('node-ical');
+            const url = 'https://calendar.google.com/calendar/ical/en.indian%23holiday%40group.v.calendar.google.com/public/basic.ics';
+            const events = await ical.async.fromURL(url);
+            for (const key in events) {
+                if (events[key].type === 'VEVENT') {
+                    const ev = events[key];
+                    if (ev.start && ev.start.getFullYear() === parseInt(year)) {
+                        const mm = String(ev.start.getMonth() + 1).padStart(2, '0');
+                        const dd = String(ev.start.getDate()).padStart(2, '0');
+                        holidays.push({
+                            date: `${mm}-${dd}`,
+                            name: ev.summary,
+                            description: ev.description || `Public Holiday / Observance fetched dynamically from Google Calendar: ${ev.summary}`,
+                            category: "Festival",
+                            emoji: "🎉",
+                            isDynamic: true
+                        });
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('[ERR] Failed to fetch Google Calendar Holidays:', e.message);
+        }
+
+        // 2. Specialized External API Configuration (Calendarific)
+        // If the admin configures CALENDARIFIC_API_KEY in Render, this will automatically fetch
+        // specific religious festivals like Akshaya Tritiya dynamically every year.
+        if (process.env.CALENDARIFIC_API_KEY) {
+            try {
+                const res = await axios.get(`https://calendarific.com/api/v2/holidays?api_key=${process.env.CALENDARIFIC_API_KEY}&country=IN&year=${year}`);
+                const items = res.data.response.holidays || [];
+                items.forEach(h => {
+                    holidays.push({
+                        date: `${String(h.date.datetime.month).padStart(2, '0')}-${String(h.date.datetime.day).padStart(2, '0')}`,
+                        name: h.name,
+                        description: h.description || h.name,
+                        category: "Festival",
+                        emoji: "🪔",
+                        isDynamic: true
+                    });
+                });
+            } catch (e) {
+                console.error('[ERR] Calendarific fetch failed:', e.message);
+            }
+        } 
+        
+        // 3. Dynamic External Custom List (If Admin defines an external JSON URL, fetch holidays from it!)
+        // This is a definitive dynamic place to store all customized details that external APIs might miss.
+        if (process.env.CUSTOM_FESTIVALS_URL) {
+            try {
+                const res = await axios.get(process.env.CUSTOM_FESTIVALS_URL);
+                if (Array.isArray(res.data)) {
+                    // Expecting items format: { date: "MM-DD", name, description, category, emoji, year (optional) }
+                    const dynamicItems = res.data.filter(item => !item.year || item.year == year);
+                    dynamicItems.forEach(h => {
+                        holidays.push({
+                            date: h.date,
+                            name: h.name,
+                            description: h.description || `Special observance: ${h.name}`,
+                            category: h.category || "Festival",
+                            emoji: h.emoji || "✨",
+                            isDynamic: true
+                        });
+                    });
+                }
+            } catch (e) {
+                console.error('[ERR] Custom external dynamic JSON fetch failed:', e.message);
+            }
+        } else {
+            // 4. Fallback for crucial missing optional holidays if no external source is defined
+            // E.g., Akshaya Tritiya, which is frequently unlisted in global public calendars.
+            const optionalDatesFallback = {
+                2024: [ { date: "05-10", name: "Akshaya Tritiya", description: "A highly auspicious and holy day for Hindu communities.", category: "Festival", emoji: "💎", isDynamic: true } ],
+                2025: [ { date: "04-30", name: "Akshaya Tritiya", description: "A highly auspicious and holy day for Hindu communities.", category: "Festival", emoji: "💎", isDynamic: true } ],
+                2026: [ { date: "04-19", name: "Akshaya Tritiya", description: "A highly auspicious and holy day for Hindu communities.", category: "Festival", emoji: "💎", isDynamic: true } ],
+                2027: [ { date: "05-09", name: "Akshaya Tritiya", description: "A highly auspicious and holy day for Hindu communities.", category: "Festival", emoji: "💎", isDynamic: true } ]
+            };
+            
+            if (optionalDatesFallback[year]) {
+                holidays.push(...optionalDatesFallback[year]);
+            }
+        }
+
+        // Deduplicate matching dates and names
+        const uniqueHolidays = [];
+        const seen = new Set();
+        for (const h of holidays) {
+            const key = `${h.date}-${h.name.toLowerCase()}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                uniqueHolidays.push(h);
+            }
+        }
+
+        res.json({ status: 'success', year, data: uniqueHolidays });
+    } catch (err) {
+        console.error("External Calendar API Error:", err);
+        res.status(500).json({ error: "Failed to fetch external holidays" });
+    }
+});
+
 
 // 13. BACKEND GALLERY API
 app.get('/api/gallery', async (req, res) => {

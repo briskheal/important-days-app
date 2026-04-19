@@ -819,17 +819,49 @@ clearBtn.addEventListener('click', () => {
     searchInput.focus();
 });
 
+// ── Dynamic External Holidays Fetching ──
+let lastFetchedYear = null;
+async function loadDynamicHolidays(year) {
+    if (lastFetchedYear === year) return;
+    try {
+        const res = await fetch(getApiUrl(`/api/external-holidays?year=${year}`));
+        if (res.ok) {
+            const result = await res.json();
+            if (result.status === 'success' && result.data) {
+                // Remove previous dynamic entries
+                importantDays = importantDays.filter(d => !d.isDynamic);
+                // Append new dynamic entries
+                importantDays.push(...result.data);
+                lastFetchedYear = year;
+                renderToday();
+                renderUpcoming();
+                renderCalendar();
+            }
+        }
+    } catch (e) {
+        console.warn("Failed to load dynamic external holidays", e);
+    }
+}
+
 // ── Calendar nav ─────────────────────────
 calPrevBtn.addEventListener('click', () => {
     calMonth--;
-    if (calMonth < 0) { calMonth = 11; calYear--; }
+    if (calMonth < 0) { 
+        calMonth = 11; 
+        calYear--; 
+        loadDynamicHolidays(calYear); // Fetch new year holidays
+    }
     selectedDate = null;
     renderCalendar();
 });
 
 calNextBtn.addEventListener('click', () => {
     calMonth++;
-    if (calMonth > 11) { calMonth = 0; calYear++; }
+    if (calMonth > 11) { 
+        calMonth = 0; 
+        calYear++; 
+        loadDynamicHolidays(calYear); // Fetch new year holidays
+    }
     selectedDate = null;
     renderCalendar();
 });
@@ -857,6 +889,7 @@ renderToday();
 renderChips();
 renderCalendar();
 renderUpcoming();
+loadDynamicHolidays(calYear); // Initial dynamic load
 checkFirstLogin();
 
 // ── Blinking Login Hint Banner ──────────

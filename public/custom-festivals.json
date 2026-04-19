@@ -1,0 +1,4 @@
+[
+    { "date": "04-19", "name": "Akshaya Tritiya", "description": "A highly auspicious day (Dynamically fetched from external JSON).", "category": "Festival", "emoji": "🔱", "year": 2026 },
+    { "date": "08-26", "name": "Raksha Bandhan", "description": "Sibling bond celebration.", "category": "Festival", "emoji": "🪢", "year": 2026 }
+]
