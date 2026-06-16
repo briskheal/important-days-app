@@ -3918,3 +3918,91 @@ html {
         width: 6px;
     }
 }
+
+/* --- Mobile Calendar Redesign --- */
+.mobile-calendar-list {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 4px;
+}
+
+.mobile-cal-card {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, background 0.2s;
+    text-align: left;
+    text-decoration: none;
+    color: var(--text-main);
+    align-items: center;
+}
+
+.mobile-cal-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-cal-card.is-today {
+    border-color: var(--accent-alt);
+    background: rgba(76, 201, 240, 0.05);
+}
+
+.mobile-cal-card.is-today .mobile-cal-day {
+    color: var(--accent-alt);
+}
+
+.mobile-cal-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-right: 16px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 60px;
+}
+
+.mobile-cal-day {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent-main);
+}
+
+.mobile-cal-weekday {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+.mobile-cal-events {
+    padding-left: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+}
+
+.mobile-cal-event-item {
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    #cal-dow-row, #cal-grid {
+        display: none !important;
+    }
+    .mobile-calendar-list {
+        display: flex;
+    }
+}

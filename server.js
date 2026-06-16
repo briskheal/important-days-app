@@ -26,6 +26,7 @@ if (MONGODB_URI && !MONGODB_URI.includes('your_mongodb_atlas')) {
             console.log('[OK] Connected to MongoDB Atlas');
             dbConnected = true;
             syncGalleryFromDB(); // Restore uploads on start
+            syncStaticHolidaysToDB(); // Insert static holidays into DB
         })
         .catch(err => {
             console.error('[ERR] MongoDB Connection Error:', err.message);
@@ -123,6 +124,17 @@ const galleryImageSchema = new mongoose.Schema({
     uploadedAt: { type: Date, default: Date.now }
 });
 const GalleryImage = mongoose.model('GalleryImage', galleryImageSchema);
+
+const holidaySchema = new mongoose.Schema({
+    date: String,
+    name: { type: String },
+    description: String,
+    category: String,
+    emoji: String,
+    isDynamic: { type: Boolean, default: false },
+    year: String
+});
+const Holiday = mongoose.model('Holiday', holidaySchema);
 
 // ── SYNC LOGIC: Restore Gallery from DB on Startup ──
 async function syncGalleryFromDB() {
@@ -327,6 +339,25 @@ async function sendEmail({ to, subject, text, html }) {
         console.log(`[OK] Email (Bridge API) SENT to ${to}:`, response.data.status);
     } catch (error) {
         console.error(`[ERR] Email (Bridge API) FAILED for ${to}:`, error.message);
+    }
+}
+
+async function syncStaticHolidaysToDB() {
+    try {
+        const { importantDays } = require('./data.js');
+        let addedCount = 0;
+        for (const hd of importantDays) {
+            const exists = await Holiday.findOne({ name: hd.name, date: hd.date });
+            if (!exists) {
+                await new Holiday({ ...hd, isDynamic: false }).save();
+                addedCount++;
+            }
+        }
+        if (addedCount > 0) {
+            console.log(`[SYNC] Added ${addedCount} static holidays to MongoDB.`);
+        }
+    } catch (err) {
+        console.error('[ERR] Failed to sync static holidays to MongoDB:', err.message);
     }
 }
 
@@ -1332,6 +1363,97 @@ async function checkAndSendNotifications() {
 cron.schedule('0 8 * * *', () => {
     console.log('[CRON] Running daily event notification check...');
     checkAndSendNotifications();
+});
+
+async function monthlyDatabaseRefresh() {
+    console.log('[CRON] Running monthly database refresh...');
+    const year = new Date().getFullYear();
+    try {
+        let added = 0;
+        // 1. Google Calendar
+        const gcalUrl = 'https://calendar.google.com/calendar/ical/en.indian%23holiday%40group.v.calendar.google.com/public/basic.ics';
+        const events = await ical.async.fromURL(gcalUrl);
+        for (const key in events) {
+            if (events[key].type === 'VEVENT') {
+                const ev = events[key];
+                if (ev.start && ev.start.getFullYear() === year) {
+                    const mm = String(ev.start.getMonth() + 1).padStart(2, '0');
+                    const dd = String(ev.start.getDate()).padStart(2, '0');
+                    const dateStr = `${mm}-${dd}`;
+                    const name = ev.summary;
+                    const exists = await Holiday.findOne({ name, date: dateStr });
+                    if (!exists) {
+                        await new Holiday({ date: dateStr, name, description: ev.description || name, category: "Festival", emoji: "🎉", isDynamic: true, year: String(year) }).save();
+                        added++;
+                    }
+                }
+            }
+        }
+        
+        // 2. Calendarific
+        if (process.env.CALENDARIFIC_API_KEY) {
+            const res = await axios.get(`https://calendarific.com/api/v2/holidays?api_key=${process.env.CALENDARIFIC_API_KEY}&country=IN&year=${year}`);
+            const items = res.data.response.holidays || [];
+            for (const h of items) {
+                const dateStr = `${String(h.date.datetime.month).padStart(2, '0')}-${String(h.date.datetime.day).padStart(2, '0')}`;
+                const name = h.name;
+                const exists = await Holiday.findOne({ name, date: dateStr });
+                if (!exists) {
+                    await new Holiday({ date: dateStr, name, description: h.description || name, category: "Festival", emoji: "🪔", isDynamic: true, year: String(year) }).save();
+                    added++;
+                }
+            }
+        }
+
+        // 3. UN International Days
+        try {
+            const unRes = await axios.get("https://raw.githubusercontent.com/civilianEU/un-international-days/main/data/days.json");
+            if (Array.isArray(unRes.data)) {
+                for (const unDay of unRes.data) {
+                    let dstr = unDay.date;
+                    if (dstr && dstr.includes('-')) {
+                        const parts = dstr.split('-');
+                        if (parts.length === 2) dstr = `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+                    }
+                    const exists = await Holiday.findOne({ name: unDay.title, date: dstr });
+                    if (!exists) {
+                        await new Holiday({ date: dstr, name: unDay.title, description: `UN International Day: ${unDay.title}`, category: "International", emoji: "🌐", isDynamic: true }).save();
+                        added++;
+                    }
+                }
+            }
+        } catch (unErr) {
+            console.error("[ERR] Failed to fetch UN days:", unErr.message);
+        }
+
+        console.log(`[CRON] Monthly refresh complete. Added ${added} new holidays.`);
+    } catch (e) {
+        console.error('[ERR] Monthly refresh failed:', e.message);
+    }
+}
+
+// Run on 1st of every month at midnight
+cron.schedule('0 0 1 * *', monthlyDatabaseRefresh);
+monthlyDatabaseRefresh(); // Auto-seed on next restart
+
+// ── API ROUTES ──────────────────────────────────
+
+// 1. GET ALL HOLIDAYS FROM DB
+app.get('/api/holidays', async (req, res) => {
+    try {
+        const year = req.query.year || new Date().getFullYear();
+        // Fetch static (year undefined or null) and dynamic for the given year
+        const holidays = await Holiday.find({
+            $or: [
+                { isDynamic: false },
+                { isDynamic: true, year: String(year) }
+            ]
+        });
+        res.json({ status: 'success', year, data: holidays });
+    } catch (err) {
+        console.error("Fetch Holidays Error:", err);
+        res.status(500).json({ error: "Failed to fetch holidays from database" });
+    }
 });
 
 // Start Server

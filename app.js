@@ -581,6 +581,8 @@ function renderCalendar() {
 
     calMonthLabel.textContent = `${MONTH_NAMES[calMonth]} ${calYear}`;
     calGrid.innerHTML = '';
+    const mobileCalList = document.getElementById('mobile-cal-list');
+    if (mobileCalList) mobileCalList.innerHTML = '';
 
     // Blank cells before day 1
     for (let b = 0; b < firstDay; b++) {
@@ -637,6 +639,43 @@ function renderCalendar() {
         cell.addEventListener('click', () => selectDate(key));
 
         calGrid.appendChild(cell);
+
+        // Mobile list building
+        if (mobileCalList && (events.length > 0 || isToday)) {
+            const dateObj = new Date(calYear, calMonth, d);
+            const weekdayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+            
+            const mCard = document.createElement('div');
+            mCard.className = 'mobile-cal-card' + (isToday ? ' is-today' : '');
+            
+            let mEventsHtml = '';
+            if (events.length > 0) {
+                mEventsHtml = events.map(ev => 
+                    `<div class="mobile-cal-event-item">
+                        <span style="font-size:1.1em">${ev.emoji}</span>
+                        <span>${escHtml(ev.name)}</span>
+                    </div>`
+                ).join('');
+            } else {
+                mEventsHtml = `<div class="mobile-cal-event-item" style="color:var(--text-secondary)">No events today</div>`;
+            }
+
+            mCard.innerHTML = `
+                <div class="mobile-cal-date">
+                    <span class="mobile-cal-day">${d}</span>
+                    <span class="mobile-cal-weekday">${weekdayName}</span>
+                </div>
+                <div class="mobile-cal-events">
+                    ${mEventsHtml}
+                </div>
+            `;
+            mCard.addEventListener('click', () => {
+                selectDate(key);
+                // On mobile, scroll to the detail panel
+                setTimeout(() => document.getElementById('day-detail-panel').scrollIntoView({ behavior: 'smooth' }), 50);
+            });
+            mobileCalList.appendChild(mCard);
+        }
     }
 
     // Re-render detail panel for current selection
@@ -824,14 +863,12 @@ let lastFetchedYear = null;
 async function loadDynamicHolidays(year) {
     if (lastFetchedYear === year) return;
     try {
-        const res = await fetch(getApiUrl(`/api/external-holidays?year=${year}`));
+        const res = await fetch(getApiUrl(`/api/holidays?year=${year}`));
         if (res.ok) {
             const result = await res.json();
             if (result.status === 'success' && result.data) {
-                // Remove previous dynamic entries
-                importantDays = importantDays.filter(d => !d.isDynamic);
-                // Append new dynamic entries
-                importantDays.push(...result.data);
+                // Completely replace the static importantDays with the DB combined list
+                importantDays = result.data;
                 lastFetchedYear = year;
                 renderToday();
                 renderUpcoming();
@@ -839,7 +876,7 @@ async function loadDynamicHolidays(year) {
             }
         }
     } catch (e) {
-        console.warn("Failed to load dynamic external holidays", e);
+        console.warn("Failed to load holidays from database", e);
     }
 }
 

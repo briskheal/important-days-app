@@ -135,8 +135,8 @@
             </button>
           </div>
         </div>
-        <!-- Day-of-week headers -->
-        <div class="cal-dow-row" role="row">
+        <!-- Day-of-week headers (Desktop only) -->
+        <div id="cal-dow-row" class="cal-dow-row" role="row">
           <div>Sun</div>
           <div>Mon</div>
           <div>Tue</div>
@@ -145,8 +145,11 @@
           <div>Fri</div>
           <div>Sat</div>
         </div>
-        <!-- Calendar grid filled by JS -->
+        <!-- Calendar grid filled by JS (Desktop only) -->
         <div id="cal-grid" role="grid" aria-label="Monthly activity calendar"></div>
+        
+        <!-- Mobile Calendar List (Mobile only) -->
+        <div id="mobile-cal-list" class="mobile-calendar-list" role="list" aria-label="Monthly activity list"></div>
 
         <!-- Day detail panel (shows when user clicks a date) -->
         <div id="day-detail-panel" class="day-detail-panel" aria-live="polite" aria-label="Day activity details"></div>
