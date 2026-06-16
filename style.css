@@ -4044,3 +4044,52 @@ html {
         max-height: 35vh !important;
     }
 }
+
+/* --- Mobile Hamburger Dropdown --- */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-main);
+    cursor: pointer;
+    padding: 8px;
+    z-index: 1000;
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+    
+    #header-actions {
+        display: none;
+        position: absolute;
+        top: 60px;
+        right: 15px;
+        background: #111422;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        flex-direction: column;
+        padding: 10px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        z-index: 999;
+        min-width: 160px;
+    }
+    
+    #header-actions.open {
+        display: flex;
+        animation: fadeIn 0.2s ease;
+    }
+    
+    .btn-header {
+        width: 100%;
+        justify-content: flex-start;
+        background: transparent;
+        border: none;
+        padding: 12px 15px;
+    }
+    
+    .btn-header:hover {
+        background: rgba(255,255,255,0.05);
+    }
+}

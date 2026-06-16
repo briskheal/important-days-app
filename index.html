@@ -7,7 +7,7 @@
   <title>Important Days – Daily Global & India Celebrations</title>
   <meta name="description"
     content="Discover important days, festivals and celebrations — India festivals, International days, Health, Environment and more." />
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=5" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <meta name="theme-color" content="#030712" />
@@ -28,8 +28,10 @@
         </div>
       </a>
       
-      <div class="header-actions">
-        <div id="live-clock" aria-live="polite">--:--</div>
+      <div class="header-actions" id="header-actions">
+        <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
         <button id="fixed-profile-btn" class="btn-header" onclick="openProfileModal()">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           Profile
@@ -497,7 +499,7 @@
 
     <!-- ── Scripts ── -->
     <script src="data.js"></script>
-    <script src="app.js?v=31"></script>
+    <script src="app.js?v=32"></script>
 </body>
 
 </html>

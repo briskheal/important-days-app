@@ -2799,3 +2799,29 @@ window.viewReceipt = function(txnId) {
     // Check after a short delay for initial render
     setTimeout(checkScroll, 1000);
 })();
+
+// -- Mobile Dropdown Menu -----------------
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const headerActions = document.getElementById('header-actions');
+
+if (mobileMenuBtn && headerActions) {
+    mobileMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        headerActions.classList.toggle('open');
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!headerActions.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+            headerActions.classList.remove('open');
+        }
+    });
+    
+    // Close menu when clicking a button inside it
+    const actionBtns = headerActions.querySelectorAll('.btn-header');
+    actionBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            headerActions.classList.remove('open');
+        });
+    });
+}
