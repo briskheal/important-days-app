@@ -1318,6 +1318,19 @@ async function checkAndSendNotifications() {
         
         const upcomingEvents = [];
         
+        // --- Added: Fetch from MongoDB for Medical Days and other local app events ---
+        try {
+            const dbEvents = await ImportantDay.find({ date: targetMM + '-' + targetDD });
+            dbEvents.forEach(dbEv => {
+                const eventName = dbEv.name + (dbEv.category ? ' (' + dbEv.category + ')' : '');
+                if (!upcomingEvents.includes(eventName)) {
+                    upcomingEvents.push(eventName);
+                }
+            });
+        } catch(err) {
+            console.error('[ERR] Could not fetch DB events for cron:', err.message);
+        }
+        
         for (const key in events) {
             if (events[key].type === 'VEVENT') {
                 const ev = events[key];
