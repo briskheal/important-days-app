@@ -1075,6 +1075,7 @@ const ContentUI = {
                 <div class="cm-header" style="padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between; position:relative; z-index:10;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:1.2rem;">💡</span>
+                        <button id="DCM-BACK" style="background:transparent; border:none; color:#ebecf0; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; gap:6px; padding:0; font-weight:600; margin-right:10px;">⬅ Back</button>
                         <h3 id="DCM-TITLE" style="margin:0; font-family:'Outfit',sans-serif; font-size:1.1rem; font-weight:700;">Content</h3>
                     </div>
                     <div style="display:flex; align-items:center; gap:12px;">
@@ -1182,6 +1183,7 @@ const ContentUI = {
         this.refreshBtn = document.getElementById('DCM-REFRESH');
 
         document.getElementById('DCM-CLOSE').onclick = () => this.hide();
+        document.getElementById('DCM-BACK').onclick = () => this.hide();
         this.overlay.onclick = (e) => { if (e.target === this.overlay) this.hide(); };
 
         // Image Selection Handlers
