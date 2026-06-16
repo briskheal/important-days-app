@@ -1507,6 +1507,51 @@ monthlyDatabaseRefresh(); // Auto-seed on next restart
 
 // ── API ROUTES ──────────────────────────────────
 
+// ==========================================
+// PERSONAL ACTIVITIES API
+// ==========================================
+
+app.post('/api/personal-activity', async (req, res) => {
+    try {
+        const { userPhone, date, name, description } = req.body;
+        if (!userPhone || !date || !name || !description) {
+            return res.status(400).json({ status: 'error', message: 'Missing required fields' });
+        }
+        
+        const newActivity = new PersonalActivity({
+            userPhone, date, name, description
+        });
+        await newActivity.save();
+        res.json({ status: 'success', data: newActivity });
+    } catch (e) {
+        console.error('[ERR] POST /api/personal-activity:', e.message);
+        res.status(500).json({ status: 'error', message: 'Failed to save personal activity' });
+    }
+});
+
+app.get('/api/personal-activity/:phone', async (req, res) => {
+    try {
+        const activities = await PersonalActivity.find({ userPhone: req.params.phone });
+        res.json({ status: 'success', data: activities });
+    } catch (e) {
+        console.error('[ERR] GET /api/personal-activity:', e.message);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch personal activities' });
+    }
+});
+
+app.delete('/api/personal-activity/:id', async (req, res) => {
+    try {
+        const deleted = await PersonalActivity.findByIdAndDelete(req.params.id);
+        if (!deleted) {
+             return res.status(404).json({ status: 'error', message: 'Activity not found' });
+        }
+        res.json({ status: 'success', message: 'Activity deleted successfully' });
+    } catch (e) {
+        console.error('[ERR] DELETE /api/personal-activity:', e.message);
+        res.status(500).json({ status: 'error', message: 'Failed to delete activity' });
+    }
+});
+
 // 1. GET ALL HOLIDAYS FROM DB
 app.get('/api/holidays', async (req, res) => {
     try {
