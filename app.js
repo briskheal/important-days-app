@@ -483,15 +483,6 @@ const calPrevBtn = document.getElementById('cal-prev-btn');
 const calNextBtn = document.getElementById('cal-next-btn');
 const dayDetailPanel = document.getElementById('day-detail-panel');
 const upcomingList = document.getElementById('upcoming-list');
-const clockEl = document.getElementById('live-clock');
-
-// ── Live Clock ──────────────────────────
-function updateClock() {
-    const now = new Date();
-    clockEl.textContent = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
-setInterval(updateClock, 1000);
-updateClock();
 
 // ── Render Today Banner ──────────────────
 function renderToday() {
