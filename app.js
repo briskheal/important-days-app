@@ -865,8 +865,10 @@ async function loadDynamicHolidays(year) {
             const result = await res.json();
             if (result.status === 'success' && result.data) {
                 // Completely replace the static importantDays with the DB combined list
-                importantDays = result.data;
+                                importantDays = result.data;
                 lastFetchedYear = year;
+                const pActivities = await fetchPersonalActivities();
+                importantDays = [...importantDays, ...pActivities];
                 renderToday();
                 renderUpcoming();
                 renderCalendar();
@@ -2926,7 +2928,7 @@ async function forceRefreshCalendar() {
         }
     }
 }
-\n
+
 window.deletePersonalActivity = async function(id) {
     if (!confirm("Are you sure you want to delete this personal activity?")) return;
     try {
