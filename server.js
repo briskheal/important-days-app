@@ -1303,14 +1303,7 @@ app.post('/api/admin/test-email', async (req, res) => {
     }
 });
 
-// Fallback error handler 
-app.use((req, res) => {
-    if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: 'API route not found' });
-    }
-    console.log(`[WARN] 404 Not Found: ${req.url}`);
-    res.status(404).sendFile(path.join(__dirname, 'landing.html'));
-});
+
 
 // ── LIVE CALENDAR NOTIFICATIONS (CRON JOB) ─────────────────
 const cron = require('node-cron');
@@ -1568,6 +1561,15 @@ app.get('/api/holidays', async (req, res) => {
         console.error("Fetch Holidays Error:", err);
         res.status(500).json({ error: "Failed to fetch holidays from database" });
     }
+});
+
+// Fallback error handler 
+app.use((req, res) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API route not found' });
+    }
+    console.log(`[WARN] 404 Not Found: ${req.url}`);
+    res.status(404).sendFile(path.join(__dirname, 'landing.html'));
 });
 
 // Start Server
