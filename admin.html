@@ -847,9 +847,7 @@
 
         // ── Export / Reset ────────────────────────────────────
         function exportUsers() {
-            if (!confirm('Download User Registration Data (CSV)?
-
-Note: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
+            if (!confirm('Download User Registration Data (CSV)?\n\nNote: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
             const u = cachedUsers;
             if (!u || !u.length) { alert('No users in cache. Refresh dash first.'); return; }
             const h = ['Name', 'Phone', 'Email', 'Address', 'City', 'Pincode', 'State', 'Login ID', 'Registered'];
@@ -865,14 +863,11 @@ Note: If your browser is set to "Ask where to save", you can choose the director
                 `"${x.timestamp ? new Date(x.timestamp).toLocaleString() : ''}"`
             ].join(','));
             const date = new Date().toISOString().split('T')[0];
-            dl([h.join(','), ...rows].join('
-'), `ImportantDays_Users_${date}.csv`);
+            dl([h.join(','), ...rows].join('\n'), `ImportantDays_Users_${date}.csv`);
         }
 
         function exportPayments() {
-            if (!confirm('Download Payment Records (CSV)?
-
-Note: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
+            if (!confirm('Download Payment Records (CSV)?\n\nNote: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
             const l = cachedLedger; if (!l || !l.length) { alert('No payment records in cache. Refresh dash first.'); return; }
             const allUsers = cachedUsers;
             const h = ['Name', 'Phone', 'Login ID', 'Plan', 'Amount(₹)', 'UTR', 'Status', 'Submitted', 'ActionDate', 'Expiry'];
@@ -895,8 +890,7 @@ Note: If your browser is set to "Ask where to save", you can choose the director
                 ].join(',');
             });
             const date = new Date().toISOString().split('T')[0];
-            dl([h.join(','), ...rows].join('
-'), `ImportantDays_Payments_${date}.csv`);
+            dl([h.join(','), ...rows].join('\n'), `ImportantDays_Payments_${date}.csv`);
         }
 
         function dl(csv, name) {
@@ -905,9 +899,7 @@ Note: If your browser is set to "Ask where to save", you can choose the director
         }
 
         async function confirmReset() {
-            if (!confirm('⚠️ WARNING: This will PERMANENTLY ERASE ALL users and payment records on the server and local storage! 
-
-Are you sure you want to proceed?')) return;
+            if (!confirm('⚠️ WARNING: This will PERMANENTLY ERASE ALL users and payment records on the server and local storage! \n\nAre you sure you want to proceed?')) return;
             if (!confirm('FINAL CONFIRMATION: Are you REALLY sure? This CANNOT be undone (y/n)?')) return;
 
             const id = document.getElementById('adminId').value.trim();
