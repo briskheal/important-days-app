@@ -887,7 +887,7 @@ app.post('/api/notify-status', async (req, res) => {
 // 12. SMART AI CONTENT — Dual-Engine (Gemini + Pollinations Fusion)
 app.get('/api/content', async (req, res) => {
     try {
-        const { name, category } = req.query;
+        const { name, category, desc } = req.query;
         if (!name) return res.status(400).json({ error: "Missing name" });
 
         console.log(`[INFO] Dual-AI Content Request: ${name} (${category})`);
@@ -948,7 +948,10 @@ app.get('/api/content', async (req, res) => {
         // ── Run BOTH in parallel ───────────────────────────────────
         console.log(`[AI] Firing Gemini + Pollinations in parallel for: ${name}`);
 
-        const geminiPrompt = `Create 4 social media posts for "${name}" (${category}):
+        const geminiPrompt = `Create 4 social media posts for "${name}" (${category}).
+Context/Theme: ${desc || 'A special observance day'}
+
+
 1. LinkedIn/X: formal, insightful, 2-3 sentences
 2. WhatsApp: warm, personal, emotional, 2-3 sentences  
 3. Instagram: short punchy under 15 words with emojis
@@ -958,7 +961,9 @@ Also 5 hashtags, 1 CTA, AND an "imagePrompt".
 The "imagePrompt" MUST BE a highly detailed, 40-word visual description suitable for Midjourney/DALL-E to generate an image that perfectly captures the mood and story of these posts. Do not include text in the image prompt.
 ONLY return valid JSON (no markdown): {"variants":["post1","post2","post3","post4"],"hashtags":"#h1 #h2 #h3 #h4 #h5","cta":"cta here", "imagePrompt":"..."}`;
 
-        const pollinationsPrompt = `You are a creative storytelling expert. For the observance "${name}" (Category: ${category}), generate 2 unique content angles:
+        const pollinationsPrompt = `You are a creative storytelling expert. For the observance "${name}" (Category: ${category}), generate 2 unique content angles. 
+Context/Theme: ${desc || 'A special observance day'}
+
 1. STORYTELLING (a short compelling micro-story or narrative about this day — 3 sentences)
 2. DID YOU KNOW (a surprising fact or insightful perspective about this observance — 2 sentences)
 
@@ -1024,7 +1029,7 @@ Return ONLY valid JSON: {"story":"...","fact":"...","bonus_hashtags":"#extra1 #e
                     model: "gpt-4o-mini",
                     messages: [
                         { role: "system", content: "You are a professional social media content creator. Respond in JSON." },
-                        { role: "user", content: `Create 4 social media variants for "${name}" (${category}). JSON: {"variants":["v1","v2","v3","v4"],"hashtags":"#h1...","cta":"...", "imagePrompt":"..."}` }
+                        { role: "user", content: `Create 4 social media variants for "${name}" (${category}). Context: "${desc || ''}". JSON: {"variants":["v1","v2","v3","v4"],"hashtags":"#h1...","cta":"...", "imagePrompt":"..."}` }
                     ],
                     response_format: { type: "json_object" }, max_tokens: 900
                 }, { headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` }, timeout: 8000 });

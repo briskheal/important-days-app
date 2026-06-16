@@ -2245,7 +2245,7 @@ async function openContentModal(mmdd, eventName, category) {
         ContentUI._currentIsAi = false; // Reset to false
 
         try {
-            const apiPath = `/api/content?date=${mmdd}&name=${encodeURIComponent(ev.name)}&category=${encodeURIComponent(category || ev.category)}`;
+            const apiPath = `/api/content?date=${mmdd}&name=${encodeURIComponent(ev.name)}&category=${encodeURIComponent(category || ev.category)}&desc=${encodeURIComponent(ev.description || '')}`;
             
             // No longer need the manual protocol check here as getApiUrl handles it
             const response = await fetch(getApiUrl(apiPath));
