@@ -459,7 +459,8 @@ function highlight(text, query) {
 }
 
 function catClass(cat) {
-    return 'cat-' + cat.replace(/\s*&\s*/g, '-').replace(/\s+/g, '-');
+    if (!cat) return 'cat-personal';
+    return 'cat-' + String(cat).replace(/\s*&\s*/g, '-').replace(/\s+/g, '-');
 }
 
 const MONTH_NAMES = [
@@ -723,22 +724,25 @@ function renderDayDetail() {
           </div>`;
     } else {
         const cards = events.map((ev, idx) => {
-            const catCls = catClass(ev.category);
+            const safeCategory = ev.category || 'Personal';
+            const catCls = catClass(safeCategory);
+            const deleteBtn = ev.isPersonal ? `<button onclick="window.deletePersonalActivity('${ev._id}')" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; margin-left: auto;">Delete</button>` : '';
             return `
             <div class="detail-card">
-              <div class="detail-card-top">
-                <div class="detail-emoji">${ev.emoji}</div>
+              <div class="detail-card-top" style="display: flex; align-items: center; width: 100%;">
+                <div class="detail-emoji">${ev.emoji || '📌'}</div>
                 <div class="detail-info">
                   <div class="detail-name">${highlight(ev.name, state.query)}</div>
-                  <span class="card-category ${catCls}">${escHtml(ev.category)}</span>
+                  <span class="card-category ${catCls}">${escHtml(safeCategory)}</span>
                 </div>
+                ${deleteBtn}
               </div>
               <p class="detail-desc">${highlight(ev.description, state.query)}</p>
               <div class="detail-free-content" id="free-content-${idx}" style="margin: 12px 0; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 12px; font-size: 0.82rem; border-left: 3px solid var(--accent-3); display: none;">
                 <div style="font-weight: 700; color: var(--accent-3); margin-bottom: 4px; font-size: 0.75rem; text-transform: uppercase;">💡 Quick Fact</div>
                 <div class="free-text">Loading...</div>
               </div>
-              <button class="detail-content-btn detail-content-btn--card" data-action="get-content" data-date="${selectedDate}" data-name="${escHtml(ev.name)}" data-category="${escHtml(ev.category)}">📝 Get Content for &ldquo;${escHtml(ev.name)}&rdquo;</button>
+              <button class="detail-content-btn detail-content-btn--card" data-action="get-content" data-date="${selectedDate}" data-name="${escHtml(ev.name)}" data-category="${escHtml(ev.category || 'Personal')}">📝 Get Content for &ldquo;${escHtml(ev.name)}&rdquo;</button>
             </div>`;
         }).join('');
 
