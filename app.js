@@ -2236,6 +2236,8 @@ async function openContentModal(mmdd, eventName, category) {
 
     ContentUI.variants = [];
     ContentUI.currentIndex = 0;
+    ContentUI.selectedImage = null;
+    ContentUI.imagePrompt = '';
     ContentUI.show(ev.name, true);
 
     try {
