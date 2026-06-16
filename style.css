@@ -4011,17 +4011,24 @@ html {
     display: none;
     width: 100%;
     padding: 10px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    color: var(--text-main);
-    border-radius: var(--radius-full);
+    background-color: #111422; /* explicitly dark */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff; /* explicitly white text */
+    border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     outline: none;
+    -webkit-appearance: menulist;
 }
+
+.mobile-category-select option {
+    background-color: #111422;
+    color: #ffffff;
+}
+
 .mobile-category-select:focus {
-    border-color: var(--accent-main);
+    border-color: #6366f1;
 }
 @media (max-width: 768px) {
     .chips-wrap {
