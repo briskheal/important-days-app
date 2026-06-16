@@ -469,7 +469,10 @@
         <div id="dashboard" style="display:none;">
             <div class="top-bar">
                 <h1>⚙️ Admin <span>Dashboard</span></h1>
-                <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Menu" style="margin-left: auto;">\n  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>\n</button>\n<div class="top-actions" id="header-actions">
+                <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Menu" style="margin-left: auto;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+</button>
+<div class="top-actions" id="header-actions">
                     <button class="btn btn-purple" onclick="exportUsers()">⬇️ Export Users</button>
                     <button class="btn btn-purple" onclick="exportPayments()"
                         style="background:#4cc9f0;color:#0b0e1a;">⬇️ Export Payments</button>
@@ -844,7 +847,9 @@
 
         // ── Export / Reset ────────────────────────────────────
         function exportUsers() {
-            if (!confirm('Download User Registration Data (CSV)?\n\nNote: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
+            if (!confirm('Download User Registration Data (CSV)?
+
+Note: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
             const u = cachedUsers;
             if (!u || !u.length) { alert('No users in cache. Refresh dash first.'); return; }
             const h = ['Name', 'Phone', 'Email', 'Address', 'City', 'Pincode', 'State', 'Login ID', 'Registered'];
@@ -860,11 +865,14 @@
                 `"${x.timestamp ? new Date(x.timestamp).toLocaleString() : ''}"`
             ].join(','));
             const date = new Date().toISOString().split('T')[0];
-            dl([h.join(','), ...rows].join('\n'), `ImportantDays_Users_${date}.csv`);
+            dl([h.join(','), ...rows].join('
+'), `ImportantDays_Users_${date}.csv`);
         }
 
         function exportPayments() {
-            if (!confirm('Download Payment Records (CSV)?\n\nNote: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
+            if (!confirm('Download Payment Records (CSV)?
+
+Note: If your browser is set to "Ask where to save", you can choose the directory next.')) return;
             const l = cachedLedger; if (!l || !l.length) { alert('No payment records in cache. Refresh dash first.'); return; }
             const allUsers = cachedUsers;
             const h = ['Name', 'Phone', 'Login ID', 'Plan', 'Amount(₹)', 'UTR', 'Status', 'Submitted', 'ActionDate', 'Expiry'];
@@ -887,7 +895,8 @@
                 ].join(',');
             });
             const date = new Date().toISOString().split('T')[0];
-            dl([h.join(','), ...rows].join('\n'), `ImportantDays_Payments_${date}.csv`);
+            dl([h.join(','), ...rows].join('
+'), `ImportantDays_Payments_${date}.csv`);
         }
 
         function dl(csv, name) {
@@ -896,7 +905,9 @@
         }
 
         async function confirmReset() {
-            if (!confirm('⚠️ WARNING: This will PERMANENTLY ERASE ALL users and payment records on the server and local storage! \n\nAre you sure you want to proceed?')) return;
+            if (!confirm('⚠️ WARNING: This will PERMANENTLY ERASE ALL users and payment records on the server and local storage! 
+
+Are you sure you want to proceed?')) return;
             if (!confirm('FINAL CONFIRMATION: Are you REALLY sure? This CANNOT be undone (y/n)?')) return;
 
             const id = document.getElementById('adminId').value.trim();
