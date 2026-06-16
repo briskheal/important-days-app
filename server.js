@@ -954,8 +954,9 @@ app.get('/api/content', async (req, res) => {
 3. Instagram: short punchy under 15 words with emojis
 4. Hinglish: Indian audience mix Hindi+English, 2 sentences
 
-Also 5 hashtags and 1 CTA.
-ONLY return valid JSON (no markdown): {"variants":["post1","post2","post3","post4"],"hashtags":"#h1 #h2 #h3 #h4 #h5","cta":"cta here"}`;
+Also 5 hashtags, 1 CTA, AND an "imagePrompt".
+The "imagePrompt" MUST BE a highly detailed, 40-word visual description suitable for Midjourney/DALL-E to generate an image that perfectly captures the mood and story of these posts. Do not include text in the image prompt.
+ONLY return valid JSON (no markdown): {"variants":["post1","post2","post3","post4"],"hashtags":"#h1 #h2 #h3 #h4 #h5","cta":"cta here", "imagePrompt":"..."}`;
 
         const pollinationsPrompt = `You are a creative storytelling expert. For the observance "${name}" (Category: ${category}), generate 2 unique content angles:
 1. STORYTELLING (a short compelling micro-story or narrative about this day — 3 sentences)
@@ -971,6 +972,7 @@ Return ONLY valid JSON: {"story":"...","fact":"...","bonus_hashtags":"#extra1 #e
         let variants = [];
         let hashtags = '';
         let cta = '';
+        let imagePrompt = '';
         let isAi = false;
         let freeSnippet = '';
 
@@ -980,6 +982,7 @@ Return ONLY valid JSON: {"story":"...","fact":"...","bonus_hashtags":"#extra1 #e
             variants = g.variants;
             hashtags = g.hashtags || '';
             cta = g.cta || '';
+            imagePrompt = g.imagePrompt || '';
             isAi = true;
             console.log(`[OK] Gemini delivered ${variants.length} variants`);
         } else {
@@ -1021,12 +1024,12 @@ Return ONLY valid JSON: {"story":"...","fact":"...","bonus_hashtags":"#extra1 #e
                     model: "gpt-4o-mini",
                     messages: [
                         { role: "system", content: "You are a professional social media content creator. Respond in JSON." },
-                        { role: "user", content: `Create 4 social media variants for "${name}" (${category}). JSON: {"variants":["v1","v2","v3","v4"],"hashtags":"#h1...","cta":"..."}` }
+                        { role: "user", content: `Create 4 social media variants for "${name}" (${category}). JSON: {"variants":["v1","v2","v3","v4"],"hashtags":"#h1...","cta":"...", "imagePrompt":"..."}` }
                     ],
                     response_format: { type: "json_object" }, max_tokens: 900
                 }, { headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` }, timeout: 8000 });
                 const d = JSON.parse(aiResp.data.choices[0].message.content);
-                if (d.variants?.length >= 4) { variants = d.variants; hashtags = d.hashtags; cta = d.cta; isAi = true; }
+                if (d.variants?.length >= 4) { variants = d.variants; hashtags = d.hashtags; cta = d.cta; imagePrompt = d.imagePrompt || ''; isAi = true; }
             } catch (e) { console.warn(`[WARN] OpenAI fail: ${e.message}`); }
         }
 
@@ -1093,7 +1096,7 @@ Return ONLY valid JSON: {"story":"...","fact":"...","bonus_hashtags":"#extra1 #e
         // freeSnippet: prefer Pollinations story/fact, else first variant
         const finalFreeSnippet = freeSnippet || variants[0] || '';
         console.log(`[DONE] ${variants.length} variants | AI=${isAi} | for: ${name}`);
-        res.json({ status: 'success', variants, hashtags, cta, freeSnippet: finalFreeSnippet, isAi });
+        res.json({ status: 'success', variants, hashtags, cta, imagePrompt, freeSnippet: finalFreeSnippet, isAi });
     } catch (err) {
         console.error("AI Content Error:", err);
         res.status(500).json({ error: "Failed to generate content" });
