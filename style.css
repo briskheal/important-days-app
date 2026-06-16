@@ -1912,7 +1912,12 @@ html {
 
   /* Day detail panel */
   .detail-cards-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .sub-plan-card--featured {
+    order: -1;
     gap: 10px;
   }
 
@@ -2011,7 +2016,12 @@ html {
   }
 
   .detail-cards-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .sub-plan-card--featured {
+    order: -1;
     gap: 12px;
   }
 }
@@ -2068,6 +2078,8 @@ html {
 
 .sub-box {
   max-width: 780px !important;
+  max-height: 92vh;
+  overflow-y: auto;
 }
 
 .sub-plans-grid {
@@ -2079,7 +2091,12 @@ html {
 
 @media (max-width: 640px) {
   .sub-plans-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .sub-plan-card--featured {
+    order: -1;
   }
 }
 
@@ -2408,7 +2425,12 @@ html {
 
 @media (max-width: 480px) {
   .pay-apps-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .sub-plan-card--featured {
+    order: -1;
     /* Stack pay buttons on mobile */
   }
 }
@@ -3048,7 +3070,12 @@ html {
 
 @media (max-width: 640px) {
   .profile-cols-row {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .sub-plan-card--featured {
+    order: -1;
     gap: 15px;
   }
 }
@@ -3130,7 +3157,12 @@ html {
 
 @media (max-width: 540px) {
   .social-inputs-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .sub-plan-card--featured {
+    order: -1;
   }
 }
 
