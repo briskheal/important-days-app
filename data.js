@@ -240,7 +240,30 @@ let importantDays = [
   { date: "12-23", name: "Kisan Diwas (National Farmers' Day)", description: "Chaudhary Charan Singh's birthday.", category: CATEGORIES.INDIA, emoji: "🌾" },
   { date: "12-24", name: "National Consumer Rights Day (India)", description: "Consumer rights in India.", category: CATEGORIES.INDIA, emoji: "🛒" },
   { date: "12-25", name: "Good Governance Day (India)", description: "Atal Bihari Vajpayee's birthday.", category: CATEGORIES.INDIA, emoji: "🏛️" },
-  { date: "12-25", name: "Christmas Day", description: "Birth of Jesus Christ.", category: CATEGORIES.FESTIVAL, emoji: "🎄" }
+  { date: "12-25", name: "Christmas Day", description: "Birth of Jesus Christ.", category: CATEGORIES.FESTIVAL, emoji: "🎄" },
+
+  // ── EXTENDED MEDICAL & HEALTH DAYS ──
+  { date: "01-30", name: "World Leprosy Day", description: "Raises awareness about leprosy (Hansen's disease) and calls for an end to leprosy-related stigma.", category: CATEGORIES.HEALTH, emoji: "🩺" },
+  { date: "04-11", name: "World Parkinson's Day", description: "Raises awareness of Parkinson's disease, promoting understanding of this neurodegenerative disorder.", category: CATEGORIES.HEALTH, emoji: "🧠" },
+  { date: "04-17", name: "World Hemophilia Day", description: "Raises awareness about hemophilia and other inherited bleeding disorders.", category: CATEGORIES.HEALTH, emoji: "🩸" },
+  { date: "04-24", name: "World Meningitis Day", description: "Raises awareness about meningitis, emphasizing the importance of vaccination.", category: CATEGORIES.HEALTH, emoji: "💉" },
+  { date: "05-05", name: "World Hand Hygiene Day", description: "Promotes hand hygiene in healthcare globally.", category: CATEGORIES.HEALTH, emoji: "🧼" },
+  { date: "05-08", name: "World Red Cross and Red Crescent Day", description: "Celebrates the principles of the International Red Cross and Red Crescent Movement.", category: CATEGORIES.HEALTH, emoji: "🚑" },
+  { date: "05-19", name: "World IBD Day", description: "Raises awareness about Inflammatory Bowel Disease (Crohn's disease and ulcerative colitis).", category: CATEGORIES.HEALTH, emoji: "🩺" },
+  { date: "05-25", name: "World Thyroid Day", description: "Dedicated to thyroid patients and those studying and treating thyroid diseases.", category: CATEGORIES.HEALTH, emoji: "🦋" },
+  { date: "05-28", name: "World Blood Cancer Day", description: "Global awareness day dedicated to the fight against blood cancer.", category: CATEGORIES.HEALTH, emoji: "🩸" },
+  { date: "05-30", name: "World MS Day", description: "Raises awareness for Multiple Sclerosis and campaigns with everyone affected by MS.", category: CATEGORIES.HEALTH, emoji: "🧠" },
+  { date: "05-31", name: "World No Tobacco Day", description: "Highlights the health and other risks associated with tobacco use.", category: CATEGORIES.HEALTH, emoji: "🚭" },
+  { date: "06-19", name: "World Sickle Cell Day", description: "Increases public knowledge and understanding of sickle cell disease.", category: CATEGORIES.HEALTH, emoji: "🧬" },
+  { date: "06-26", name: "Int. Day Against Drug Abuse", description: "International Day Against Drug Abuse and Illicit Trafficking.", category: CATEGORIES.HEALTH, emoji: "🚫" },
+  { date: "07-01", name: "National Doctors' Day", description: "Honors the contributions of physicians to individual lives and communities.", category: CATEGORIES.HEALTH, emoji: "👨‍⚕️" },
+  { date: "07-22", name: "World Brain Day", description: "Raises awareness about brain health and neurological disorders.", category: CATEGORIES.HEALTH, emoji: "🧠" },
+  { date: "09-17", name: "World Patient Safety Day", description: "Enhances global understanding of patient safety.", category: CATEGORIES.HEALTH, emoji: "🛡️" },
+  { date: "10-12", name: "World Arthritis Day", description: "Raises global awareness about rheumatic and musculoskeletal diseases.", category: CATEGORIES.HEALTH, emoji: "🦴" },
+  { date: "10-20", name: "World Osteoporosis Day", description: "Raises global awareness of the prevention, diagnosis, and treatment of osteoporosis.", category: CATEGORIES.HEALTH, emoji: "🦴" },
+  { date: "10-29", name: "World Stroke Day", description: "Underscores the serious nature and high rates of stroke, raising awareness of prevention and treatment.", category: CATEGORIES.HEALTH, emoji: "🧠" },
+  { date: "11-17", name: "World Prematurity Day", description: "Raises awareness of preterm birth and the concerns of preterm babies and their families.", category: CATEGORIES.HEALTH, emoji: "👶" },
+  { date: "12-12", name: "Universal Health Coverage Day", description: "Calls for leaders to make smarter investments in health and ensure everyone has access to quality care.", category: CATEGORIES.HEALTH, emoji: "🏥" },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {
