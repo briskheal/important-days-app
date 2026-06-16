@@ -4125,3 +4125,43 @@ html {
         background: rgba(255,255,255,0.05);
     }
 }
+\n
+/* ==========================================
+   PERSONAL ACTIVITY BANNER
+   ========================================== */
+.pa-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(124, 111, 255, 0.1), rgba(67, 208, 138, 0.1));
+  border: 1px solid rgba(124, 111, 255, 0.2);
+  border-radius: 14px;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.pa-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(124, 111, 255, 0.15);
+}
+.pa-banner-btn {
+  background: linear-gradient(135deg, #7c6fff, #43d08a);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Desktop visibility */
+.pa-banner-mobile { display: none; }
+.pa-banner-desktop { display: flex; margin-top: 24px; }
+
+/* Mobile visibility */
+@media (max-width: 768px) {
+  .pa-banner-desktop { display: none !important; }
+  .pa-banner-mobile { display: flex; margin-bottom: 20px; }
+  .pa-banner { flex-direction: column; text-align: center; gap: 12px; padding: 16px; }
+}

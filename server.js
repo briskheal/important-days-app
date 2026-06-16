@@ -110,6 +110,18 @@ const adminSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 const Payment = mongoose.model('Payment', paymentSchema);
 const Admin = mongoose.model('Admin', adminSchema);
+const personalActivitySchema = new mongoose.Schema({
+    userPhone: { type: String, required: true },
+    date: { type: String, required: true }, // Format: MM-DD
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    emoji: { type: String, default: '📌' },
+    isPersonal: { type: Boolean, default: true },
+    createdAt: { type: Date, default: Date.now }
+});
+const PersonalActivity = mongoose.model('PersonalActivity', personalActivitySchema);
+
+
 
 const deletedImageSchema = new mongoose.Schema({
     url: { type: String, unique: true },

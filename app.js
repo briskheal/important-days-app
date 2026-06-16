@@ -2239,6 +2239,21 @@ async function openContentModal(mmdd, eventName, category) {
     ContentUI.selectedImage = null;
     ContentUI.imagePrompt = '';
     ContentUI.show(ev.name, true);
+    
+    // Inject Delete Button for Personal Activities
+    if (ev.isPersonal && ev._id) {
+        const headerBtn = document.createElement('button');
+        headerBtn.id = 'pa-delete-btn';
+        headerBtn.innerHTML = '🗑️ Delete Activity';
+        headerBtn.style.cssText = 'background:rgba(255,50,50,0.1); color:#ff5555; border:1px solid rgba(255,50,50,0.2); border-radius:8px; padding:6px 12px; margin-top:10px; cursor:pointer; font-size:0.85rem; font-weight:600; width:100%;';
+        headerBtn.onclick = () => deletePersonalActivity(ev._id);
+        
+        // Remove old if exists
+        const oldBtn = ContentUI.body.querySelector('#pa-delete-btn');
+        if (oldBtn) oldBtn.remove();
+        
+        ContentUI.body.prepend(headerBtn);
+    }
 
     try {
         let tags, cta;
@@ -2820,3 +2835,112 @@ if (mobileMenuBtn && headerActions) {
         });
     });
 }
+
+
+// ==========================================
+// PERSONAL ACTIVITIES
+// ==========================================
+
+window.openPersonalActivityModal = function() {
+    const user = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
+    if (!user.phone) {
+        alert("Please log in to add personal activities to your calendar.");
+        return;
+    }
+    const modal = document.getElementById('personal-activity-modal');
+    if (modal) modal.hidden = false;
+};
+
+window.fetchPersonalActivities = async function() {
+    const user = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
+    if (!user.phone) return [];
+    
+    try {
+        const res = await fetch(getApiUrl(`/api/personal-activity/${encodeURIComponent(user.phone)}`));
+        if (res.ok) {
+            const result = await res.json();
+            if (result.status === 'success') {
+                return result.data;
+            }
+        }
+    } catch (e) {
+        console.error("Failed to fetch personal activities", e);
+    }
+    return [];
+};
+
+document.getElementById('pa-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const user = JSON.parse(localStorage.getItem('importantDays_user') || '{}');
+    if (!user.phone) return;
+
+    const btn = document.getElementById('pa-submit-btn');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
+    const name = document.getElementById('pa-name').value.trim();
+    const fullDate = document.getElementById('pa-date').value; // YYYY-MM-DD
+    const description = document.getElementById('pa-desc').value.trim();
+    
+    // Extract MM-DD
+    const dateParts = fullDate.split('-');
+    const mmdd = `${dateParts[1]}-${dateParts[2]}`;
+
+    try {
+        const res = await fetch(getApiUrl('/api/personal-activity'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userPhone: user.phone, date: mmdd, name, description })
+        });
+        const result = await res.json();
+        
+        if (result.status === 'success') {
+            document.getElementById('personal-activity-modal').hidden = true;
+            document.getElementById('pa-form').reset();
+            // Refetch all holidays and merge again to update UI
+            await forceRefreshCalendar();
+        } else {
+            alert(result.message || "Failed to save activity");
+        }
+    } catch (e) {
+        console.error("Error saving personal activity", e);
+        alert("Network error. Please try again.");
+    } finally {
+        btn.textContent = 'Save to My Calendar';
+        btn.disabled = false;
+    }
+});
+
+async function forceRefreshCalendar() {
+    const year = new Date().getFullYear();
+    const res = await fetch(getApiUrl(`/api/holidays?year=${year}`));
+    if (res.ok) {
+        const result = await res.json();
+        if (result.status === 'success' && result.data) {
+            importantDays = result.data;
+            const pActivities = await fetchPersonalActivities();
+            importantDays = [...importantDays, ...pActivities];
+            renderToday();
+            renderUpcoming();
+            renderCalendar();
+        }
+    }
+}
+\n
+window.deletePersonalActivity = async function(id) {
+    if (!confirm("Are you sure you want to delete this personal activity?")) return;
+    try {
+        const res = await fetch(getApiUrl(`/api/personal-activity/${id}`), { method: 'DELETE' });
+        const result = await res.json();
+        if (result.status === 'success') {
+            document.getElementById('dynamic-content-modal').hidden = true;
+            await forceRefreshCalendar();
+            alert("Personal activity deleted.");
+        } else {
+            alert(result.message || "Failed to delete.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Network error.");
+    }
+};
