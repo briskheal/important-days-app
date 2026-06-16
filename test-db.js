@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const uri = process.env.MONGODB_URI;
 
@@ -11,7 +13,7 @@ if (!uri) {
 console.log("🔍 Testing connection to MongoDB...");
 console.log(`📡 URI: ${uri.replace(/:([^@]+)@/, ':****@')}`); // Hide password
 
-mongoose.connect(uri)
+mongoose.connect(uri, { family: 4 })
     .then(() => {
         console.log("✅ SUCCESS: Connected to MongoDB Atlas successfully!");
         process.exit(0);

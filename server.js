@@ -1,4 +1,6 @@
 require('dotenv').config();
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -1257,6 +1259,79 @@ app.use((req, res) => {
     }
     console.log(`[WARN] 404 Not Found: ${req.url}`);
     res.status(404).sendFile(path.join(__dirname, 'landing.html'));
+});
+
+// ── LIVE CALENDAR NOTIFICATIONS (CRON JOB) ─────────────────
+const cron = require('node-cron');
+const ical = require('node-ical');
+
+async function checkAndSendNotifications() {
+    try {
+        const adminEmail = process.env.EMAIL_USER;
+        if (!adminEmail) {
+            console.warn("[WARN] EMAIL_USER not defined. Cannot send notifications.");
+            return;
+        }
+
+        // We check for events occurring in 3 DAYS
+        const today = new Date();
+        const targetDate = new Date(today);
+        targetDate.setDate(targetDate.getDate() + 3);
+        
+        const year = targetDate.getFullYear();
+        const targetMM = String(targetDate.getMonth() + 1).padStart(2, '0');
+        const targetDD = String(targetDate.getDate()).padStart(2, '0');
+        
+        const url = 'https://calendar.google.com/calendar/ical/en.indian%23holiday%40group.v.calendar.google.com/public/basic.ics';
+        const events = await ical.async.fromURL(url);
+        
+        const upcomingEvents = [];
+        
+        for (const key in events) {
+            if (events[key].type === 'VEVENT') {
+                const ev = events[key];
+                if (ev.start && ev.start.getFullYear() === year) {
+                    const mm = String(ev.start.getMonth() + 1).padStart(2, '0');
+                    const dd = String(ev.start.getDate()).padStart(2, '0');
+                    
+                    if (mm === targetMM && dd === targetDD) {
+                        upcomingEvents.push(ev.summary);
+                    }
+                }
+            }
+        }
+        
+        if (upcomingEvents.length > 0) {
+            console.log(`[CRON] Found ${upcomingEvents.length} events in 3 days. Sending email...`);
+            const htmlContent = `
+                <h2>Upcoming Important Days Notification</h2>
+                <p>Hello Admin,</p>
+                <p>The following events/holidays are scheduled to happen in 3 days (${targetMM}-${targetDD}-${year}):</p>
+                <ul>
+                    ${upcomingEvents.map(e => `<li><strong>${e}</strong></li>`).join('')}
+                </ul>
+                <p>Please log in to the Important Days App to review or manage any related activities.</p>
+            `;
+            
+            await sendEmail({
+                to: adminEmail,
+                subject: `Reminder: Upcoming Events in 3 Days (${upcomingEvents.length})`,
+                text: `Events in 3 days: ${upcomingEvents.join(', ')}`,
+                html: htmlContent
+            });
+        } else {
+            console.log("[CRON] No events found in 3 days.");
+        }
+        
+    } catch (e) {
+        console.error('[ERR] Cron job failed:', e.message);
+    }
+}
+
+// Schedule to run every day at 08:00 AM
+cron.schedule('0 8 * * *', () => {
+    console.log('[CRON] Running daily event notification check...');
+    checkAndSendNotifications();
 });
 
 // Start Server
