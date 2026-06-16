@@ -1426,6 +1426,42 @@ async function monthlyDatabaseRefresh() {
             console.error("[ERR] Failed to fetch UN days:", unErr.message);
         }
 
+        // 4. Calculate Movable Global Observances (e.g. Father's Day)
+        try {
+            // Helper to find Nth specific day of a month (0 = Jan, 0 = Sun)
+            const getNthDay = (y, m, dayOfWeek, n) => {
+                let d = new Date(y, m, 1);
+                let count = 0;
+                while (d.getMonth() === m) {
+                    if (d.getDay() === dayOfWeek) {
+                        count++;
+                        if (count === n) return d;
+                    }
+                    d.setDate(d.getDate() + 1);
+                }
+                return null;
+            };
+
+            const movables = [
+                { name: "Mother's Day", date: getNthDay(year, 4, 0, 2), emoji: "💐", category: "Observance" }, // 2nd Sunday of May
+                { name: "Father's Day", date: getNthDay(year, 5, 0, 3), emoji: "👨‍👧", category: "Observance" }, // 3rd Sunday of June
+                { name: "Thanksgiving Day", date: getNthDay(year, 10, 4, 4), emoji: "🦃", category: "Observance" } // 4th Thursday of Nov
+            ];
+
+            for (const mov of movables) {
+                if (mov.date) {
+                    const dstr = `${String(mov.date.getMonth() + 1).padStart(2, '0')}-${String(mov.date.getDate()).padStart(2, '0')}`;
+                    const exists = await Holiday.findOne({ name: mov.name, date: dstr });
+                    if (!exists) {
+                        await new Holiday({ date: dstr, name: mov.name, description: `International Observance: ${mov.name}`, category: mov.category, emoji: mov.emoji, isDynamic: true, year: String(year) }).save();
+                        added++;
+                    }
+                }
+            }
+        } catch (movErr) {
+            console.error("[ERR] Failed to calculate movable holidays:", movErr.message);
+        }
+
         console.log(`[CRON] Monthly refresh complete. Added ${added} new holidays.`);
     } catch (e) {
         console.error('[ERR] Monthly refresh failed:', e.message);

@@ -4006,3 +4006,34 @@ html {
         display: flex;
     }
 }
+
+.mobile-category-select {
+    display: none;
+    width: 100%;
+    padding: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+}
+.mobile-category-select:focus {
+    border-color: var(--accent-main);
+}
+@media (max-width: 768px) {
+    .chips-wrap {
+        display: none !important;
+    }
+    .mobile-category-select {
+        display: block;
+    }
+}
+
+@media (max-width: 768px) {
+    .cm-image-preview {
+        max-height: 35vh !important;
+    }
+}

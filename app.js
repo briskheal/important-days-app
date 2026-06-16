@@ -476,6 +476,7 @@ const heroDateEl = document.getElementById('today-full-date');
 const searchInput = document.getElementById('search-input');
 const clearBtn = document.getElementById('clear-btn');
 const categoryChipsEl = document.getElementById('category-chips');
+const categorySelectEl = document.getElementById('category-select');
 const calGrid = document.getElementById('cal-grid');
 const calMonthLabel = document.getElementById('cal-month-label');
 const calPrevBtn = document.getElementById('cal-prev-btn');
@@ -523,7 +524,10 @@ function renderToday() {
 // ── Render Category Chips ────────────────
 function renderChips() {
     categoryChipsEl.innerHTML = '';
+    categorySelectEl.innerHTML = '';
+    
     ALL_CATEGORIES.forEach(cat => {
+        // Desktop Chip
         const btn = document.createElement('button');
         btn.className = 'chip' + (cat === state.category ? ' active' : '');
         btn.textContent = cat;
@@ -534,8 +538,21 @@ function renderChips() {
             renderCalendar();
         });
         categoryChipsEl.appendChild(btn);
+
+        // Mobile Select Option
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        if (cat === state.category) opt.selected = true;
+        categorySelectEl.appendChild(opt);
     });
 }
+
+categorySelectEl.addEventListener('change', (e) => {
+    state.category = e.target.value;
+    renderChips();
+    renderCalendar();
+});
 
 // ── Get filtered days for a given MM-DD key ──
 function getEventsForDate(mmdd) {
@@ -694,17 +711,6 @@ function selectDate(key, force = false) {
         
         // Auto-scroll to detail panel
         setTimeout(() => dayDetailPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
-
-        // --- SMART AUTO-OPEN ---
-        // If this day has EXACTLY ONE event, open the content modal automatically
-        const events = getEventsForDate(selectedDate);
-        if (events.length === 1) {
-            const ev = events[0];
-            // Small delay to ensure renderDayDetail is done and scrolling is underway
-            setTimeout(() => {
-                openContentModal(selectedDate, ev.name, ev.category);
-            }, 300);
-        }
     }
 }
 
@@ -1093,7 +1099,7 @@ const ContentUI = {
 
                 <!-- NEW: Integrated Scroll Container -->
                 <div class="cm-scroll-container" style="position:relative;">
-                    <div id="DCM-SCROLL-VIEWPORT" style="max-height: 480px; overflow-y: auto; scrollbar-width: none; position: relative; scroll-behavior: smooth;">
+                    <div id="DCM-SCROLL-VIEWPORT" style="max-height: 65vh; overflow-y: auto; scrollbar-width: none; position: relative; scroll-behavior: smooth;">
                         
                         <div id="DCM-BODY" style="padding:16px 20px; line-height:1.6; font-size:0.95rem; color:#d1d5db;"></div>
                         
