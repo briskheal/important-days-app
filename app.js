@@ -1813,8 +1813,37 @@ const ContentUI = {
             
             this.body.innerHTML = `
                 ${aiBadge}
-                <div style="font-size:1.05rem; line-height:1.7; color:#f3f4f6; white-space:pre-wrap; font-family:'Inter', sans-serif;">${text}</div>
+                <div id="DCM-EDITABLE-TEXT" contenteditable="true" spellcheck="false" style="font-size:1.05rem; line-height:1.7; color:#f3f4f6; white-space:pre-wrap; font-family:'Inter', sans-serif; background: rgba(255,255,255,0.03); padding: 16px; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.2); outline: none; transition: 0.2s;">${text}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 8px;">
+                    <div style="font-size: 0.75rem; color: #9ca3af; user-select: none; pointer-events: none;">✎ Click text to edit</div>
+                    <button id="DCM-MANUAL-COPY" style="background:rgba(255,255,255,0.1); border:none; color:#fff; padding:4px 10px; border-radius:6px; font-size:0.75rem; cursor:pointer; display:none;">📋 Copy Edits</button>
+                </div>
             `;
+            
+            const editableDiv = document.getElementById('DCM-EDITABLE-TEXT');
+            const manualCopy = document.getElementById('DCM-MANUAL-COPY');
+            if(editableDiv) {
+                editableDiv.addEventListener('input', (e) => {
+                    this.variants[this.currentIndex] = e.target.innerText;
+                    if(manualCopy) manualCopy.style.display = 'block';
+                });
+                editableDiv.addEventListener('focus', (e) => {
+                    e.target.style.borderColor = 'rgba(124, 111, 255, 0.6)';
+                    e.target.style.background = 'rgba(124, 111, 255, 0.08)';
+                });
+                editableDiv.addEventListener('blur', (e) => {
+                    e.target.style.borderColor = 'rgba(255,255,255,0.2)';
+                    e.target.style.background = 'rgba(255,255,255,0.03)';
+                });
+                if(manualCopy) {
+                    manualCopy.addEventListener('click', () => {
+                        navigator.clipboard.writeText(this.variants[this.currentIndex]).then(() => {
+                            this.showFeedback("📋 Edited Content Copied!");
+                            manualCopy.style.display = 'none';
+                        });
+                    });
+                }
+            }
             
             // Auto-Copy to clipboard as requested
             if (text) {
