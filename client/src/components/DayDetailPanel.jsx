@@ -132,40 +132,54 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, canvas.height - gradientHeight, canvas.width, gradientHeight);
         
-        // Add text
+        // Dynamic Font Size Calculation
         ctx.fillStyle = 'white';
-        const fontSize = imageSize === 'square' ? 42 : 36;
-        ctx.font = `bold ${fontSize}px Outfit, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
         
-        // Simple text wrap
         const text = aiContent.variants[activeVariant];
         const words = text.split(' ');
+        
+        let fontSize = imageSize === 'square' ? 52 : 44;
+        const minFontSize = 20;
         let lines = [];
-        let currentLine = '';
+        let lineHeight = 0;
         
-        for(let n = 0; n < words.length; n++) {
-          const testLine = currentLine + words[n] + ' ';
-          const metrics = ctx.measureText(testLine);
-          if (metrics.width > canvas.width - 80 && n > 0) {
-            lines.push(currentLine.trim());
-            currentLine = words[n] + ' ';
-          } else {
-            currentLine = testLine;
+        // Target area: We want the text to fit within the gradient overlay (leaving 60px padding)
+        const maxTextHeight = gradientHeight - 60; 
+        
+        // Auto-shrink loop
+        while (fontSize >= minFontSize) {
+          ctx.font = `bold ${fontSize}px Outfit, sans-serif`;
+          lines = [];
+          let currentLine = '';
+          
+          for(let n = 0; n < words.length; n++) {
+            const testLine = currentLine + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            // 80px horizontal padding
+            if (metrics.width > canvas.width - 80 && n > 0) {
+              lines.push(currentLine.trim());
+              currentLine = words[n] + ' ';
+            } else {
+              currentLine = testLine;
+            }
           }
-        }
-        lines.push(currentLine.trim());
-        
-        // Ensure max 3 lines for visual aesthetics
-        if (lines.length > 3) {
-          lines = lines.slice(0, 3);
-          lines[2] = lines[2] + '...';
+          lines.push(currentLine.trim());
+          
+          lineHeight = fontSize + Math.max(10, fontSize * 0.3);
+          const totalTextHeight = lines.length * lineHeight;
+          
+          // If the text block fits within the max allowed height, we found the right size!
+          if (totalTextHeight <= maxTextHeight || fontSize === minFontSize) {
+             break;
+          }
+          
+          fontSize -= 2; // Decrease font size and recalculate
         }
 
         // Draw lines from bottom up
         let startY = canvas.height - 40;
-        const lineHeight = fontSize + 10;
         
         for (let i = lines.length - 1; i >= 0; i--) {
           ctx.fillText(lines[i], canvas.width / 2, startY - ((lines.length - 1 - i) * lineHeight));
