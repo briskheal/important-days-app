@@ -234,16 +234,8 @@ app.get('/api/ping', (req, res) => {
 app.get('/login', (req, res) => {
     res.redirect('/login.html');
 });
-
-const staticOptions = {
-    setHeaders: (res) => {
-        res.set('Access-Control-Allow-Origin', '*');
-        res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    }
-};
-
-app.use(express.static(__dirname, staticOptions));
-app.use('/public', express.static(path.join(__dirname, 'public'), staticOptions));
+// 4. STATIC FILE SERVING (React Frontend)
+app.use(express.static(path.join(__dirname, 'client/dist')));
 
 // ── PHOTO UPLOAD CONFIGURATION (Multer) ──────────
 const storage = multer.diskStorage({
@@ -1567,7 +1559,12 @@ app.use((req, res) => {
         return res.status(404).json({ error: 'API route not found' });
     }
     console.log(`[WARN] 404 Not Found: ${req.url}`);
-    res.status(404).sendFile(path.join(__dirname, 'landing.html'));
+    res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+});
+
+// ── ALL OTHER ROUTES (React Router) ────────────────────────
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/dist/index.html'));
 });
 
 // Start Server
