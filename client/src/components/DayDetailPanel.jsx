@@ -6,14 +6,19 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [aiContent, setAiContent] = useState(null);
   const [error, setError] = useState(null);
-  const [imageUrl, setImageUrl] = useState('');
+  const [rawImagePrompt, setRawImagePrompt] = useState('');
   const [activeVariant, setActiveVariant] = useState(0);
+  const [imageSize, setImageSize] = useState('square'); // 'square' | 'landscape'
 
   const canvasRef = useRef(null);
   const { user } = useAuth();
   const [postFeedback, setPostFeedback] = useState('');
 
   if (!selectedDay) return null;
+
+  const currentImageUrl = rawImagePrompt 
+    ? `https://image.pollinations.ai/prompt/${encodeURIComponent(rawImagePrompt)}?width=${imageSize === 'square' ? '1080' : '1200'}&height=${imageSize === 'square' ? '1080' : '630'}&nologo=true`
+    : '';
 
   const handleGenerateAI = async (event) => {
     setLoading(true);
@@ -32,11 +37,7 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
       // Handle either Gemini Pro or Pollinations fallback
       if (data.variants) {
         setAiContent(data);
-        if (data.imagePrompt) {
-          setImageUrl(`https://image.pollinations.ai/prompt/${encodeURIComponent(data.imagePrompt + ' photorealistic, highly detailed, aesthetic')}?width=1024&height=1024&nologo=true`);
-        } else {
-          setImageUrl(`https://image.pollinations.ai/prompt/${encodeURIComponent(event.name + ' holiday celebration aesthetic')}?width=1024&height=1024&nologo=true`);
-        }
+        setRawImagePrompt(data.imagePrompt ? (data.imagePrompt + ' photorealistic, highly detailed, aesthetic') : (event.name + ' holiday celebration aesthetic'));
       } else if (data.story) {
         // Fallback Pollinations format
         setAiContent({
@@ -44,7 +45,7 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
           hashtags: data.bonus_hashtags || '',
           cta: 'Share to spread awareness!'
         });
-        setImageUrl(`https://image.pollinations.ai/prompt/${encodeURIComponent(event.name + ' ' + data.story)}?width=1024&height=1024&nologo=true`);
+        setRawImagePrompt(event.name + ' ' + data.story);
       }
       
       setActiveVariant(0);
@@ -104,12 +105,16 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
     });
   };
 
-  const handleDownload = () => {
-    if (!imageUrl) return;
+  const handleDownload = (withText) => {
+    if (!currentImageUrl) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const img = new Image();
     img.crossOrigin = "Anonymous";
+    
+    // Provide user feedback that download is starting
+    setPostFeedback('⏳ Preparing download...');
+    
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;
@@ -117,49 +122,71 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
       // Draw Image
       ctx.drawImage(img, 0, 0);
       
-      // Add dark gradient overlay for text readability
-      const gradient = ctx.createLinearGradient(0, canvas.height - 300, 0, canvas.height);
-      gradient.addColorStop(0, 'rgba(0,0,0,0)');
-      gradient.addColorStop(1, 'rgba(0,0,0,0.8)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, canvas.height - 300, canvas.width, 300);
-      
-      // Add text
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 40px Outfit, sans-serif';
-      ctx.textAlign = 'center';
-      
-      // Simple text wrap
-      const text = aiContent.variants[activeVariant];
-      const words = text.split(' ');
-      let line = '';
-      let y = canvas.height - 150;
-      
-      for(let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > canvas.width - 80 && n > 0) {
-          ctx.fillText(line, canvas.width / 2, y);
-          line = words[n] + ' ';
-          y += 50;
-        } else {
-          line = testLine;
+      if (withText) {
+        // Add dark gradient overlay for text readability
+        const gradientHeight = imageSize === 'square' ? 350 : 250;
+        const gradient = ctx.createLinearGradient(0, canvas.height - gradientHeight, 0, canvas.height);
+        gradient.addColorStop(0, 'rgba(0,0,0,0)');
+        gradient.addColorStop(0.5, 'rgba(0,0,0,0.6)');
+        gradient.addColorStop(1, 'rgba(0,0,0,0.9)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, canvas.height - gradientHeight, canvas.width, gradientHeight);
+        
+        // Add text
+        ctx.fillStyle = 'white';
+        const fontSize = imageSize === 'square' ? 42 : 36;
+        ctx.font = `bold ${fontSize}px Outfit, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        
+        // Simple text wrap
+        const text = aiContent.variants[activeVariant];
+        const words = text.split(' ');
+        let lines = [];
+        let currentLine = '';
+        
+        for(let n = 0; n < words.length; n++) {
+          const testLine = currentLine + words[n] + ' ';
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > canvas.width - 80 && n > 0) {
+            lines.push(currentLine.trim());
+            currentLine = words[n] + ' ';
+          } else {
+            currentLine = testLine;
+          }
+        }
+        lines.push(currentLine.trim());
+        
+        // Ensure max 3 lines for visual aesthetics
+        if (lines.length > 3) {
+          lines = lines.slice(0, 3);
+          lines[2] = lines[2] + '...';
+        }
+
+        // Draw lines from bottom up
+        let startY = canvas.height - 40;
+        const lineHeight = fontSize + 10;
+        
+        for (let i = lines.length - 1; i >= 0; i--) {
+          ctx.fillText(lines[i], canvas.width / 2, startY - ((lines.length - 1 - i) * lineHeight));
         }
       }
-      ctx.fillText(line, canvas.width / 2, y);
-
-      // Add hashtags
-      ctx.font = '30px Inter, sans-serif';
-      ctx.fillStyle = '#f472b6'; // accent alt
-      ctx.fillText(aiContent.hashtags, canvas.width / 2, y + 60);
 
       // Trigger Download
-      const link = document.createElement('a');
-      link.download = `Important-Days-${Date.now()}.jpg`;
-      link.href = canvas.toDataURL('image/jpeg', 0.9);
-      link.click();
+      try {
+        const link = document.createElement('a');
+        link.download = `Important-Days-${imageSize}-${Date.now()}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg', 0.95);
+        link.click();
+        setPostFeedback('✅ Downloaded successfully!');
+      } catch (e) {
+        console.error("Canvas export failed", e);
+        setPostFeedback('❌ Error generating image. Try again.');
+      }
+      
+      setTimeout(() => setPostFeedback(''), 3000);
     };
-    img.src = imageUrl;
+    img.src = currentImageUrl;
   };
 
   return (
@@ -202,18 +229,38 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
             <button className={styles.backBtn} onClick={() => setAiContent(null)}>← Back to Events</button>
             
             <div className={styles.previewBox}>
-              {imageUrl && (
-                <div className={styles.imageContainer}>
-                  <img src={imageUrl} alt="AI Generated" className={styles.generatedImage} crossOrigin="anonymous" />
-                  <div className={styles.imageOverlay}>
-                    <p>{aiContent.variants[activeVariant]}</p>
+              {currentImageUrl && (
+                <div className={styles.imageSection}>
+                  <div className={styles.sizeSelectors}>
+                    <button 
+                      className={imageSize === 'square' ? styles.activeSizeBtn : styles.sizeBtn}
+                      onClick={() => setImageSize('square')}
+                    >
+                      <span>🖼️ Instagram (1:1)</span>
+                    </button>
+                    <button 
+                      className={imageSize === 'landscape' ? styles.activeSizeBtn : styles.sizeBtn}
+                      onClick={() => setImageSize('landscape')}
+                    >
+                      <span>📺 FB/X/LinkedIn (1.91:1)</span>
+                    </button>
+                  </div>
+                  
+                  <div className={`${styles.imageContainer} ${styles[imageSize]}`}>
+                    <img src={currentImageUrl} alt="AI Generated" className={styles.generatedImage} crossOrigin="anonymous" />
+                    <div className={styles.imageOverlay}>
+                      <p>{aiContent.variants[activeVariant]}</p>
+                    </div>
                   </div>
                 </div>
               )}
               
               <div className={styles.postControls}>
                 <button className={styles.copyBtn} onClick={handleCopy}>📋 Copy Text</button>
-                <button className={styles.downloadBtn} onClick={handleDownload}>⬇️ Download Image</button>
+                <div className={styles.downloadGroup}>
+                  <button className={styles.downloadBtn} onClick={() => handleDownload(true)}>⬇️ DL w/ Text</button>
+                  <button className={styles.downloadBtnAlt} onClick={() => handleDownload(false)}>⬇️ DL Image Only</button>
+                </div>
               </div>
 
               <div className={styles.variantSelector}>

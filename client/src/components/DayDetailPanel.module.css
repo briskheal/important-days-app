@@ -163,11 +163,53 @@
   flex-direction: column;
 }
 
+.imageSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.sizeSelectors {
+  display: flex;
+  background: var(--bg-obsidian);
+  border-bottom: 1px solid var(--border);
+}
+
+.sizeBtn, .activeSizeBtn {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sizeBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.activeSizeBtn {
+  color: var(--accent-main);
+  background: rgba(99, 102, 241, 0.1);
+  border-bottom: 2px solid var(--accent-main);
+  font-weight: bold;
+}
+
 .imageContainer {
   position: relative;
   width: 100%;
-  aspect-ratio: 1/1;
   background: #000;
+  transition: aspect-ratio var(--transition-fast);
+}
+
+.imageContainer.square {
+  aspect-ratio: 1/1;
+}
+
+.imageContainer.landscape {
+  aspect-ratio: 1.91/1;
 }
 
 .generatedImage {
@@ -202,7 +244,24 @@
   border-bottom: 1px solid var(--border);
 }
 
-.copyBtn, .downloadBtn {
+.copyBtn {
+  flex: 0.3;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.downloadGroup {
+  flex: 0.7;
+  display: flex;
+  gap: 8px;
+}
+
+.downloadBtn, .downloadBtnAlt {
   flex: 1;
   padding: 10px;
   border-radius: var(--radius-sm);
@@ -211,18 +270,20 @@
   cursor: pointer;
 }
 
-.copyBtn {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
 .downloadBtn {
   background: var(--accent-main);
   color: white;
 }
 
+.downloadBtnAlt {
+  background: transparent;
+  border: 1px solid var(--accent-main);
+  color: var(--accent-main);
+}
+
 .copyBtn:hover { background: rgba(255, 255, 255, 0.15); }
 .downloadBtn:hover { filter: brightness(1.1); }
+.downloadBtnAlt:hover { background: rgba(99, 102, 241, 0.1); }
 
 .variantSelector {
   padding: 16px 16px 0 16px;
