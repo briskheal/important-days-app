@@ -268,5 +268,4 @@ let importantDays = [
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { CATEGORIES, importantDays };
-}
-`nexport { CATEGORIES, importantDays };
+}export { CATEGORIES, importantDays };
