@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styles from './DayDetailPanel.module.css';
+import { useAuth } from '../context/AuthContext';
 
 const DayDetailPanel = ({ selectedDay, events, onClose }) => {
   const [loading, setLoading] = useState(false);
@@ -9,6 +10,8 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
   const [activeVariant, setActiveVariant] = useState(0);
 
   const canvasRef = useRef(null);
+  const { user } = useAuth();
+  const [postFeedback, setPostFeedback] = useState('');
 
   if (!selectedDay) return null;
 
@@ -68,8 +71,37 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
     if (platform === 'fb') shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`;
     if (platform === 'li') shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
     if (platform === 'wa') shareUrl = `https://wa.me/?text=${text}`;
+    if (platform === 'ig') shareUrl = `https://www.instagram.com/`;
     
     window.open(shareUrl, '_blank', 'width=600,height=400');
+  };
+
+  const handlePostToAll = () => {
+    if (!user) {
+      setPostFeedback('⚠️ Please login to use Auto-Post.');
+      return;
+    }
+    
+    const text = encodeURIComponent(`${aiContent.variants[activeVariant]}\n\n${aiContent.hashtags}`);
+    const url = encodeURIComponent(window.location.href);
+    
+    const selectedSites = [];
+    if (user.xAuto) selectedSites.push(`https://twitter.com/intent/tweet?text=${text}`);
+    if (user.fbAuto) selectedSites.push(user.fbLink || `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`);
+    if (user.liAuto) selectedSites.push(user.liLink || `https://www.linkedin.com/sharing/share-offsite/?url=${url}`);
+    if (user.igAuto) selectedSites.push(user.igLink || 'https://www.instagram.com/');
+    
+    if (selectedSites.length === 0) {
+      setPostFeedback('⚠️ Go to your Profile to enable Auto-Posting for your social networks.');
+      return;
+    }
+    
+    setPostFeedback('🚀 Opening selected profiles...');
+    selectedSites.forEach((siteUrl, index) => {
+      setTimeout(() => {
+        window.open(siteUrl, '_blank');
+      }, index * 500); // Stagger popups slightly to avoid browser blocking
+    });
   };
 
   const handleDownload = () => {
@@ -206,13 +238,20 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
               </div>
 
               <div className={styles.socialShare}>
-                <p>Share to Socials:</p>
+                <div className={styles.shareHeader}>
+                  <p>Share to Socials:</p>
+                  {postFeedback && <span className={styles.postFeedback}>{postFeedback}</span>}
+                </div>
                 <div className={styles.socialBtns}>
                   <button onClick={() => shareToSocial('x')} style={{background: 'black'}}>𝕏</button>
                   <button onClick={() => shareToSocial('fb')} style={{background: '#1877f2'}}>f</button>
                   <button onClick={() => shareToSocial('li')} style={{background: '#0a66c2'}}>in</button>
+                  <button onClick={() => shareToSocial('ig')} style={{background: '#E1306C'}}>IG</button>
                   <button onClick={() => shareToSocial('wa')} style={{background: '#25d366'}}>💬</button>
                 </div>
+                <button className={styles.postAllBtn} onClick={handlePostToAll}>
+                  🚀 Post to All Selected Profiles
+                </button>
               </div>
               
               <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
