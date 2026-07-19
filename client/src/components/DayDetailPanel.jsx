@@ -65,12 +65,14 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
 
   const shareToSocial = (platform) => {
     const text = encodeURIComponent(`${aiContent.variants[activeVariant]}\n\n${aiContent.hashtags}`);
-    const url = encodeURIComponent(window.location.href);
-    
     let shareUrl = '';
+    
+    // Facebook and LinkedIn force link previews if we use their sharer APIs.
+    // To allow the user to post just their downloaded photo and copied text, 
+    // we simply open the platform so they can paste and upload natively.
     if (platform === 'x') shareUrl = `https://twitter.com/intent/tweet?text=${text}`;
-    if (platform === 'fb') shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`;
-    if (platform === 'li') shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+    if (platform === 'fb') shareUrl = `https://www.facebook.com/`;
+    if (platform === 'li') shareUrl = `https://www.linkedin.com/feed/`;
     if (platform === 'wa') shareUrl = `https://wa.me/?text=${text}`;
     if (platform === 'ig') shareUrl = `https://www.instagram.com/`;
     
@@ -84,12 +86,11 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
     }
     
     const text = encodeURIComponent(`${aiContent.variants[activeVariant]}\n\n${aiContent.hashtags}`);
-    const url = encodeURIComponent(window.location.href);
     
     const selectedSites = [];
     if (user.xAuto) selectedSites.push(`https://twitter.com/intent/tweet?text=${text}`);
-    if (user.fbAuto) selectedSites.push(user.fbLink || `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`);
-    if (user.liAuto) selectedSites.push(user.liLink || `https://www.linkedin.com/sharing/share-offsite/?url=${url}`);
+    if (user.fbAuto) selectedSites.push(user.fbLink || `https://www.facebook.com/`);
+    if (user.liAuto) selectedSites.push(user.liLink || `https://www.linkedin.com/feed/`);
     if (user.igAuto) selectedSites.push(user.igLink || 'https://www.instagram.com/');
     
     if (selectedSites.length === 0) {
