@@ -1,0 +1,187 @@
+.calendarContainer {
+  padding: 20px 0;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+}
+
+.nav button {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  color: white;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav button:hover {
+  background: var(--accent-main);
+  transform: scale(1.1);
+}
+
+.monthLabel {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  min-width: 150px;
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.dowCell {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding: 8px 0;
+}
+
+.dayCell {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  min-height: 100px;
+  transition: var(--transition-fast);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.dayCell:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-lg);
+  z-index: 10;
+}
+
+.hasEvents {
+  border-bottom: 2px solid var(--accent-main);
+}
+
+.today {
+  border-color: var(--accent-alt);
+  background: rgba(236, 72, 153, 0.05);
+}
+
+.dayNum {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.today .dayNum {
+  background: var(--accent-alt);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eventList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eventItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eventName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eventEmoji {
+  font-size: 0.75rem;
+}
+
+.eventMore {
+  font-size: 0.65rem;
+  color: var(--accent-main);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/* RESPONSIVE DESIGN (Mobile First Adjustments) */
+@media (max-width: 768px) {
+  .header {
+    justify-content: center;
+  }
+  
+  .grid {
+    gap: 4px;
+  }
+  
+  .dayCell {
+    padding: 6px;
+    min-height: 70px;
+  }
+  
+  .eventName {
+    display: none; /* Hide text on mobile to save space */
+  }
+  
+  .eventItem {
+    justify-content: center;
+    padding: 2px;
+  }
+  
+  .dowCell {
+    font-size: 0.6rem;
+  }
+}

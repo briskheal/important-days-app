@@ -911,9 +911,8 @@ app.get('/api/content', async (req, res) => {
         // ── Helper: Call Gemini (multi-model fallback) ─────────────
         async function callGemini(customPrompt) {
             if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('your_gemini_key')) return null;
-            // Model order: gemini-flash-latest works on free quota via v1beta
-            // gemini-2.0-flash has higher daily quota but resets at midnight
-            const MODELS = ['gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+            // Model order: Priority on Pro models for high-quality creative content
+            const MODELS = ['gemini-2.0-pro-exp', 'gemini-1.5-pro', 'gemini-2.0-flash'];
             for (const model of MODELS) {
                 try {
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
@@ -960,18 +959,17 @@ app.get('/api/content', async (req, res) => {
         // ── Run BOTH in parallel ───────────────────────────────────
         console.log(`[AI] Firing Gemini + Pollinations in parallel for: ${name}`);
 
-        const geminiPrompt = `Create 4 social media posts for "${name}" (${category}).
+        const geminiPrompt = `You are a world-class social media manager and creative storyteller. Create 4 highly engaging, premium social media posts for "${name}" (Category: ${category}).
 Context/Theme: ${desc || 'A special observance day'}
 
+1. LinkedIn/X (Professional & Thought-Provoking): Craft a 2-3 sentence post that highlights industry relevance, leadership, or a broader societal impact. Use a sophisticated tone.
+2. WhatsApp (Warm & Emotional): Write a personal, heartfelt message (2-3 sentences) perfect for sharing with family and friends.
+3. Instagram (Visual & Punchy): Short, catchy caption under 15 words. Must be aesthetic and include relevant emojis.
+4. Hinglish (Relatable Indian Audience): A culturally resonant mix of Hindi and English. Keep it to 2 sentences that evoke local sentiment and pride.
 
-1. LinkedIn/X: formal, insightful, 2-3 sentences
-2. WhatsApp: warm, personal, emotional, 2-3 sentences  
-3. Instagram: short punchy under 15 words with emojis
-4. Hinglish: Indian audience mix Hindi+English, 2 sentences
-
-Also 5 hashtags, 1 CTA, AND an "imagePrompt".
-The "imagePrompt" MUST BE a highly detailed, 40-word visual description suitable for Midjourney/DALL-E to generate an image that perfectly captures the mood and story of these posts. Do not include text in the image prompt.
-ONLY return valid JSON (no markdown): {"variants":["post1","post2","post3","post4"],"hashtags":"#h1 #h2 #h3 #h4 #h5","cta":"cta here", "imagePrompt":"..."}`;
+Provide EXACTLY 5 trending hashtags and 1 strong Call to Action (CTA).
+Also provide an "imagePrompt": A highly detailed, 40-word visual description for Midjourney/DALL-E to generate a premium aesthetic image that perfectly captures the mood of these posts (no text in the image prompt).
+ONLY return valid JSON (no markdown, just raw JSON): {"variants":["post1","post2","post3","post4"],"hashtags":"#h1 #h2 #h3 #h4 #h5","cta":"cta here", "imagePrompt":"..."}`;
 
         const pollinationsPrompt = `You are a creative storytelling expert. For the observance "${name}" (Category: ${category}), generate 2 unique content angles. 
 Context/Theme: ${desc || 'A special observance day'}
