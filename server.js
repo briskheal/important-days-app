@@ -940,20 +940,22 @@ app.get('/api/content', async (req, res) => {
         const geminiPrompt = `You are a world-class social media manager and creative storyteller. Create 4 highly engaging, premium social media posts for "${name}" (Category: ${category}).
 Context/Theme: ${desc || 'A special observance day'}
 
-1. LinkedIn/X (Professional & Thought-Provoking): Craft a 2-3 sentence post that highlights industry relevance, leadership, or a broader societal impact. Use a sophisticated tone.
-2. WhatsApp (Warm & Emotional): Write a personal, heartfelt message (2-3 sentences) perfect for sharing with family and friends.
-3. Instagram (Visual & Punchy): Short, catchy caption under 15 words. Must be aesthetic and include relevant emojis.
-4. Hinglish (Relatable Indian Audience): A culturally resonant mix of Hindi and English. Keep it to 2 sentences that evoke local sentiment and pride.
+CRITICAL INSTRUCTION: Your content MUST explicitly explain WHY we celebrate or remember this day, and HOW IMPORTANT this day is for us as a society. Do not just state that it is the day, explain its core significance.
+
+1. LinkedIn/X (Professional & Thought-Provoking): Craft a 3-4 sentence post highlighting the day's importance, industry relevance, or broader societal impact. Use a sophisticated tone.
+2. WhatsApp (Warm & Emotional): Write a personal, heartfelt message (3-4 sentences) explaining why we remember this day, perfect for sharing with family and friends.
+3. Instagram (Visual & Punchy): Short, catchy caption (under 25 words) focusing on the core meaning of the day. Must be aesthetic and include relevant emojis.
+4. Hinglish (Relatable Indian Audience): A culturally resonant mix of Hindi and English. Keep it to 3 sentences that evoke local sentiment and explain the day's significance.
 
 Provide EXACTLY 5 trending hashtags and 1 strong Call to Action (CTA).
 Also provide an "imagePrompt": A highly detailed, 40-word visual description for Midjourney/DALL-E to generate a premium aesthetic image that perfectly captures the mood of these posts (no text in the image prompt).
 ONLY return valid JSON (no markdown, just raw JSON): {"variants":["post1","post2","post3","post4"],"hashtags":"#h1 #h2 #h3 #h4 #h5","cta":"cta here", "imagePrompt":"..."}`;
 
-        const pollinationsPrompt = `You are a creative storytelling expert. For the observance "${name}" (Category: ${category}), generate 2 unique content angles. 
+        const pollinationsPrompt = `You are a creative storytelling expert. For the observance "${name}" (Category: ${category}), generate 2 unique content angles that explicitly explain WHY we celebrate this day and its IMPORTANCE.
 Context/Theme: ${desc || 'A special observance day'}
 
-1. STORYTELLING (a short compelling micro-story or narrative about this day — 3 sentences)
-2. DID YOU KNOW (a surprising fact or insightful perspective about this observance — 2 sentences)
+1. STORYTELLING (a compelling micro-story or narrative explaining the history or importance of this day — 4 sentences)
+2. DID YOU KNOW (a surprising fact highlighting why remembering this day is crucial for our future — 3 sentences)
 
 Return ONLY valid JSON: {"story":"...","fact":"...","bonus_hashtags":"#extra1 #extra2 #extra3"}`;
 
