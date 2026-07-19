@@ -199,16 +199,7 @@ const findUserByPhone = async (phone) => {
 };
 
 // Serve static files
-// ── Serving Files ───────────────────────────────
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'landing.html'));
-});
-
-// Explicit route for Admin Panel (allows access via /admin)
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
-});
-
+// Health checks and API debug endpoints
 app.get('/health', (req, res) => {
     res.json({ 
         status: 'ok', 
@@ -228,11 +219,6 @@ app.get('/api/debug-db', (req, res) => {
 
 app.get('/api/ping', (req, res) => {
     res.json({ status: 'warm', timestamp: new Date().toISOString() });
-});
-
-// Redirect /login to /login.html
-app.get('/login', (req, res) => {
-    res.redirect('/login.html');
 });
 // 4. STATIC FILE SERVING (React Frontend)
 app.use(express.static(path.join(__dirname, 'client/dist')));
