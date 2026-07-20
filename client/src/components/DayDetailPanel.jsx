@@ -110,10 +110,8 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
     navigator.clipboard.writeText(rawText).catch(() => {});
     
     setPostFeedback('🚀 Opening profiles... Text copied to clipboard!');
-    selectedSites.forEach((siteUrl, index) => {
-      setTimeout(() => {
-        window.open(siteUrl, '_blank');
-      }, index * 500); // Stagger popups slightly to avoid browser blocking
+    selectedSites.forEach((siteUrl) => {
+      window.open(siteUrl, '_blank');
     });
   };
 
