@@ -913,7 +913,7 @@ app.get('/api/content', async (req, res) => {
         async function callGemini(customPrompt) {
             if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('your_gemini_key')) return null;
             // Model order: Priority on Pro models for high-quality creative content
-            const MODELS = ['gemini-2.0-pro-exp', 'gemini-1.5-pro', 'gemini-2.0-flash'];
+            const MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
             for (const model of MODELS) {
                 try {
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
