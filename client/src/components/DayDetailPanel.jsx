@@ -64,17 +64,22 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
   };
 
   const shareToSocial = (platform) => {
-    const text = encodeURIComponent(`${aiContent.variants[activeVariant]}\n\n${aiContent.hashtags}`);
-    const url = encodeURIComponent(window.location.href);
+    const rawText = `${aiContent.variants[activeVariant]}\n\n${aiContent.hashtags}\n\n${aiContent.cta}`;
+    const text = encodeURIComponent(rawText);
     let shareUrl = '';
     
-    // Facebook and LinkedIn require the URL parameter to open their composer windows.
-    // The user will need to manually remove the link preview in the FB composer if they just want a photo.
+    // Facebook and LinkedIn block automated text pre-filling via URLs to prevent spam.
+    // The best approach is to copy the text to clipboard and open the platform for pasting.
     if (platform === 'x') shareUrl = `https://twitter.com/intent/tweet?text=${text}`;
-    if (platform === 'fb') shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`;
-    if (platform === 'li') shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
     if (platform === 'wa') shareUrl = `https://wa.me/?text=${text}`;
-    if (platform === 'ig') shareUrl = `https://www.instagram.com/`;
+    
+    if (['fb', 'li', 'ig'].includes(platform)) {
+      navigator.clipboard.writeText(rawText);
+      alert('✅ Text copied to clipboard! Just Paste (Ctrl+V) when the app opens.');
+      if (platform === 'fb') shareUrl = `https://www.facebook.com/`;
+      if (platform === 'li') shareUrl = `https://www.linkedin.com/feed/`;
+      if (platform === 'ig') shareUrl = `https://www.instagram.com/`;
+    }
     
     window.open(shareUrl, '_blank', 'width=600,height=400');
   };
@@ -85,14 +90,15 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
       return;
     }
     
-    const text = encodeURIComponent(`${aiContent.variants[activeVariant]}\n\n${aiContent.hashtags}`);
-    const url = encodeURIComponent(window.location.href);
+    const rawText = `${aiContent.variants[activeVariant]}\n\n${aiContent.hashtags}\n\n${aiContent.cta}`;
+    const text = encodeURIComponent(rawText);
     
     const selectedSites = [];
     const social = user.social || {};
+    
     if (social.xAuto) selectedSites.push(`https://twitter.com/intent/tweet?text=${text}`);
-    if (social.fbAuto) selectedSites.push(social.fbLink || `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`);
-    if (social.liAuto) selectedSites.push(social.liLink || `https://www.linkedin.com/sharing/share-offsite/?url=${url}`);
+    if (social.fbAuto) selectedSites.push(social.fbLink || `https://www.facebook.com/`);
+    if (social.liAuto) selectedSites.push(social.liLink || `https://www.linkedin.com/feed/`);
     if (social.igAuto) selectedSites.push(social.igLink || 'https://www.instagram.com/');
     
     if (selectedSites.length === 0) {
@@ -100,7 +106,10 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
       return;
     }
     
-    setPostFeedback('🚀 Opening selected profiles...');
+    // Copy text to clipboard so it's ready for FB, LI, and IG pasting
+    navigator.clipboard.writeText(rawText).catch(() => {});
+    
+    setPostFeedback('🚀 Opening profiles... Text copied to clipboard!');
     selectedSites.forEach((siteUrl, index) => {
       setTimeout(() => {
         window.open(siteUrl, '_blank');
