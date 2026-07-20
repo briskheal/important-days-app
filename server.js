@@ -476,6 +476,29 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// 2.5 UPDATE PROFILE
+app.post('/api/update-profile', async (req, res) => {
+    try {
+        const { loginId, ...updates } = req.body;
+        if (!loginId) return res.status(400).json({ status: 'fail', message: 'loginId required' });
+        
+        const user = await User.findOneAndUpdate(
+            { loginId },
+            { $set: updates },
+            { new: true }
+        );
+        
+        if (user) {
+            res.json({ status: 'success', user });
+        } else {
+            res.status(404).json({ status: 'fail', message: 'User not found' });
+        }
+    } catch (err) {
+        console.error("Update error:", err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // 3. ADMIN LOGIN
 app.post('/api/admin/login', async (req, res) => {
     try {

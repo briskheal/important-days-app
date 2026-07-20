@@ -89,10 +89,11 @@ const DayDetailPanel = ({ selectedDay, events, onClose }) => {
     const url = encodeURIComponent(window.location.href);
     
     const selectedSites = [];
-    if (user.xAuto) selectedSites.push(`https://twitter.com/intent/tweet?text=${text}`);
-    if (user.fbAuto) selectedSites.push(user.fbLink || `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`);
-    if (user.liAuto) selectedSites.push(user.liLink || `https://www.linkedin.com/sharing/share-offsite/?url=${url}`);
-    if (user.igAuto) selectedSites.push(user.igLink || 'https://www.instagram.com/');
+    const social = user.social || {};
+    if (social.xAuto) selectedSites.push(`https://twitter.com/intent/tweet?text=${text}`);
+    if (social.fbAuto) selectedSites.push(social.fbLink || `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`);
+    if (social.liAuto) selectedSites.push(social.liLink || `https://www.linkedin.com/sharing/share-offsite/?url=${url}`);
+    if (social.igAuto) selectedSites.push(social.igLink || 'https://www.instagram.com/');
     
     if (selectedSites.length === 0) {
       setPostFeedback('⚠️ Go to your Profile to enable Auto-Posting for your social networks.');

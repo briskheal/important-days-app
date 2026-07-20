@@ -42,10 +42,33 @@ const UserProfileModal = ({ onClose }) => {
     }
   };
 
-  const handleSave = () => {
-    // Simulate saving to backend
-    login({ ...user, ...formData });
-    setMessage('✅ Profile updated successfully!');
+  const handleSave = async () => {
+    try {
+      const isDev = window.location.hostname === 'localhost';
+      const baseUrl = isDev ? 'http://localhost:3000' : '';
+      
+      const payload = {
+        loginId: user.loginId,
+        ...formData
+      };
+
+      const res = await fetch(`${baseUrl}/api/update-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        login({ ...user, ...data.user });
+        setMessage('✅ Profile updated successfully!');
+      } else {
+        setMessage('❌ Error: ' + (data.message || 'Failed to update'));
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage('❌ Connection error');
+    }
     setTimeout(() => setMessage(''), 3000);
   };
 
