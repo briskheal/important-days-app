@@ -25,7 +25,7 @@
   border-radius: var(--radius-xl);
   padding: 30px;
   width: 100%;
-  max-width: 440px;
+  max-width: 480px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   animation: fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1;
@@ -34,19 +34,6 @@
 @keyframes fadeInScale {
   from { opacity: 0; transform: scale(0.95) translateY(10px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.brandLogo {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 16px;
-  background: linear-gradient(135deg, var(--accent-main), var(--accent-alt));
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
 }
 
 .authHeader {
@@ -70,6 +57,12 @@
 
 .formGroup {
   margin-bottom: 16px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .formLabel {
@@ -143,23 +136,6 @@
   text-align: center;
 }
 
-.btnLink {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  cursor: pointer;
-  padding: 8px;
-  font-weight: 500;
-  transition: color 0.2s;
-  display: block;
-  margin: 16px auto 0;
-}
-
-.btnLink:hover {
-  color: white;
-}
-
 .divider {
   display: flex;
   align-items: center;
@@ -207,13 +183,55 @@
   font-size: 0.9rem;
 }
 
-.successBanner {
-  background: rgba(16, 185, 129, 0.1);
-  border-left: 4px solid #10b981;
-  color: #10b981;
-  padding: 12px;
-  border-radius: 4px;
+/* Success View Styles */
+.successIcon {
+  font-size: 3rem;
+  text-align: center;
   margin-bottom: 16px;
-  font-size: 0.9rem;
-  word-break: break-all;
+}
+
+.credentialsBox {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--accent-main);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.credRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.credRow:last-child {
+  border-bottom: none;
+}
+
+.credRow span {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.credRow strong {
+  font-family: 'Outfit', sans-serif;
+  color: #10b981;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+}
+
+.warningText {
+  font-size: 0.85rem;
+  color: #fbbf24;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 480px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }

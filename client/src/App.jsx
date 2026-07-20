@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
+import Register from './pages/Register';
 
 // Placeholder Admin component
 const Admin = () => <div><h2>Admin Dashboard</h2><p>Secure area</p></div>;
@@ -14,6 +15,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+      <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
       <Route 
         path="/" 
         element={
